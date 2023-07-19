@@ -4,36 +4,44 @@ import android.content.ContentResolver
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.kaeonx.poweramphelper.LocalSnackbarHostState
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 
 private const val TAG = "HomeScreen"
 
+@OptIn(ExperimentalAnimationApi::class)
 @Composable
 internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) {
     val context = LocalContext.current
-    val homeScreenState by homeScreenViewModel.homeScreenState.collectAsStateWithLifecycle(
-        initialValue = HomeScreenState(null, 0, null)
-    )
+    val homeScreenState by homeScreenViewModel.homeScreenState.collectAsStateWithLifecycle()
 
     // Originally courtesy of https://stackoverflow.com/a/67156998
     // https://developer.android.com/reference/kotlin/androidx/activity/compose/package-summary#rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContract,kotlin.Function1)
@@ -45,6 +53,16 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
         rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
             uri?.let { homeScreenViewModel.saveM3U8DirUri(it) }
         }
+
+    // Snackbar stuff
+    val snackbarHostState = LocalSnackbarHostState.current
+    val scope = rememberCoroutineScope()
+
+//    // Progress bar stuff
+    val animatedProgress by animateFloatAsState(
+        targetValue = homeScreenViewModel.analysisInProgress?.first ?: 0f,
+        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+    )
 
 //    Log.i(TAG, "${m3u8Dir.toString()}")
 //    Log.i(TAG, "${m3u8Dir?.listFiles().toString()}")
@@ -137,21 +155,38 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
                         text = "Analysis",
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        text = "Last performed at /*TODO*/",
-                        fontStyle = FontStyle.Italic
-                    )
-                    Button(
-                        onClick = { homeScreenViewModel.analyseAllPlaylist() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "Analyse")
+                    if (homeScreenState.lastAnalysisDateString != null) {
+                        Text(
+                            text = "Last performed at ${homeScreenState.lastAnalysisDateString}",
+                            fontStyle = FontStyle.Italic
+                        )
                     }
-                    Button(
-                        onClick = { },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Text(text = "kaboom")
+                    AnimatedContent(targetState = homeScreenViewModel.analysisInProgress) { aip ->
+                        if (aip == null) {
+                            Button(
+                                onClick = { homeScreenViewModel.analyseAllPlaylist() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(text = "Analyse")
+                            }
+                        } else {
+                            Column {
+                                LinearProgressIndicator(
+                                    progress = animatedProgress,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(8.dp)
+                                )
+                                homeScreenViewModel.analysisInProgress?.second?.let {
+                                    Text(
+                                        text = it,
+                                        modifier = Modifier.fillMaxWidth(),
+                                        fontSize = 12.sp,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

@@ -18,7 +18,8 @@ internal sealed class PHDestination(
     internal object Language : PHDestination(
         "language",
         "Language",
-        { ImageVector.vectorResource(R.drawable.baseline_language_24) })
+        { ImageVector.vectorResource(R.drawable.baseline_language_24) }
+    )
 }
 
 internal val bottomNavBarItems = listOf(

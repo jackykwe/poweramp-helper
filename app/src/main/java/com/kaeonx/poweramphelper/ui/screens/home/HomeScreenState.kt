@@ -8,5 +8,6 @@ import androidx.compose.runtime.Immutable
 data class HomeScreenState(
     val m3u8DirName: String?,
     val m3u8Count: Int,
-    val musicDirName: String?
+    val musicDirName: String?,
+    val lastAnalysisDateString: String?
 )

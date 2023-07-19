@@ -52,13 +52,12 @@ internal class KeyStringValuePairRepository(private val keyStringValuePairDAO: K
      * more than 1 item.
      */
     internal suspend fun put(keyStringValuePairs: List<Pair<String, String>>) {
-        keyStringValuePairDAO.upsert(keyStringValuePairs.map {
-            // Avoid exposing implementation detail of KeyStringValuePair to users of the repository
-            KeyStringValuePair(
-                key = it.first,
-                value = it.second
-            )
-        })
+        keyStringValuePairDAO.upsert(
+            keyStringValuePairs.map {
+                // Avoid exposing implementation detail of KeyStringValuePair to users of the repository
+                KeyStringValuePair(key = it.first, value = it.second)
+            }
+        )
     }
 
     internal suspend fun remove(key: String) {
