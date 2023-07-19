@@ -71,10 +71,10 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
             SharingStarted.Lazily,
             HomeScreenState(null, 0, null, null)
         )
-        // This pattern is better when there are multiple components listening in that should see
-        // the same values. The combine code (hot flow) only runs once for all observers. If each
-        // observer collected from a cold flow, the combine code runs once for each observer.
-        // Courtesy of https://stackoverflow.com/a/66889741
+    // This pattern is better when there are multiple components listening in that should see
+    // the same values. The combine code (hot flow) only runs once for all observers. If each
+    // observer collected from a cold flow, the combine code runs once for each observer.
+    // Courtesy of https://stackoverflow.com/a/66889741
 
     private val musicFolderRepository = MusicFolderRepository(appDatabaseInstance.musicFolderDao())
     private val musicFoldersFlow = musicFolderRepository.getAllFlow()
@@ -120,7 +120,9 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
 
             analysisProgress = Pair(0.2f, "Syncing music directory with database...")
             musicFolderRepository.ensureFoldersSane(
-                musicDirDF.listFiles().map { Pair(it.uri.toString(), it.name!!) }
+                musicDirDF.listFiles()
+                    .filterNot { it.name!!.startsWith(".") }
+                    .map { Pair(it.uri.toString(), it.name!!) }
             )
 
             analysisProgress = Pair(0.3f, "Unticking folders with more recent language changes...")

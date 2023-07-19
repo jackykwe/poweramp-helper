@@ -10,6 +10,6 @@ internal const val LAST_ANALYSIS_MILLIS_KSVP_KEY = "lastAnalysisTs"
 
 @Entity
 internal data class KeyStringValuePair(
-    @PrimaryKey val key: String,
-    val value: String
+    @PrimaryKey internal val key: String,
+    internal val value: String
 )

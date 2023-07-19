@@ -5,9 +5,9 @@ import androidx.compose.runtime.Immutable
 // Explanation courtesy of https://stackoverflow.com/a/74441615;
 // used in Android documentations without explanation for UIState objects
 @Immutable
-data class HomeScreenState(
-    val m3u8DirName: String?,
-    val m3u8Count: Int,
-    val musicDirName: String?,
-    val lastAnalysisDateString: String?
+internal data class HomeScreenState(
+    internal val m3u8DirName: String?,
+    internal val m3u8Count: Int,
+    internal val musicDirName: String?,
+    internal val lastAnalysisDateString: String?
 )

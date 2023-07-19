@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 internal interface MusicFolderDAO {
-    @Query("SELECT * FROM musicfolder;")
+    @Query("SELECT * FROM musicfolder ORDER BY `displayName`;")
     fun getAllFlow(): Flow<List<MusicFolder>>
 
     @Query("UPDATE musicfolder SET `doneMillis` = :doneMillis, `resetMillis` = null WHERE encodedUri = :encodedUri;")

@@ -72,12 +72,11 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
 //        Log.e(TAG, readTextFromUri(context.contentResolver, f.uri))
 //    }
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        ) {
+    Column(
+        modifier = Modifier.padding(horizontal = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(8.dp)) {
                 val musicDirName = homeScreenState.musicDirName
                 Text(
@@ -106,11 +105,7 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
                 }
             }
         }
-        OutlinedCard(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-        ) {
+        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(8.dp)) {
                 val m3u8DirName = homeScreenState.m3u8DirName
                 Text(
@@ -144,12 +139,8 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
             }
         }
 
-        if (homeScreenState.m3u8DirName != null) {
-            OutlinedCard(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-            ) {
+        if (homeScreenState.musicDirName != null && homeScreenState.m3u8DirName != null) {
+            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(8.dp)) {
                     Text(
                         text = "Analysis",
