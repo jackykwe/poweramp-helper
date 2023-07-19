@@ -79,7 +79,9 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
     private val musicFolderRepository = MusicFolderRepository(appDatabaseInstance.musicFolderDao())
     private val musicFoldersFlow = musicFolderRepository.getAllFlow()
 
-    internal var analysisInProgress: Pair<Float, String>? by mutableStateOf(null)
+    internal var analysisInProgress by mutableStateOf(false)
+        private set
+    internal var analysisProgress: Pair<Float, String>? by mutableStateOf(null)
         private set
 
     internal fun saveM3U8DirUri(uri: Uri) {
@@ -106,21 +108,22 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
 
     @SuppressLint("Range")
     internal fun analyseAllPlaylist() {
-        analysisInProgress = Pair(0f, "Starting...")
+        analysisInProgress = true
+        analysisProgress = Pair(0f, "Starting...")
         val startMillis = System.currentTimeMillis()
         viewModelScope.launch(Dispatchers.IO) {
-            analysisInProgress = Pair(0.1f, "Opening music directory...")
+            analysisProgress = Pair(0.1f, "Opening music directory...")
             val uris = urisFlow.first()
             val musicDirDF = uris[MUSIC_DIR_URI_KSVP_KEY]?.let {
                 DocumentFile.fromTreeUri(applicationContext, Uri.parse(it))
             } ?: return@launch
 
-            analysisInProgress = Pair(0.2f, "Syncing music directory with database...")
+            analysisProgress = Pair(0.2f, "Syncing music directory with database...")
             musicFolderRepository.ensureFoldersSane(
                 musicDirDF.listFiles().map { Pair(it.uri.toString(), it.name!!) }
             )
 
-            analysisInProgress = Pair(0.3f, "Unticking folders with more recent language changes...")
+            analysisProgress = Pair(0.3f, "Unticking folders with more recent language changes...")
             val musicFolders = musicFoldersFlow.first()
             musicFolderRepository.automaticUntick(
                 // Find all folders whose last modified is more recent than their doneMillis
@@ -139,12 +142,13 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
                 resetMillis = startMillis
             )
 
-            analysisInProgress = Pair(1f, "Finishing up...")
+            analysisProgress = Pair(1f, "Finishing up...")
             keyStringValuePairRepository.put(
                 LAST_ANALYSIS_MILLIS_KSVP_KEY to startMillis.toString()
             )
             delay(1000L)
-            analysisInProgress = null
+            analysisInProgress = false
+            analysisProgress = null
         }
     }
 

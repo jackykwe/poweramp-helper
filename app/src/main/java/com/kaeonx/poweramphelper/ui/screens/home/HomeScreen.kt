@@ -60,7 +60,7 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
 
 //    // Progress bar stuff
     val animatedProgress by animateFloatAsState(
-        targetValue = homeScreenViewModel.analysisInProgress?.first ?: 0f,
+        targetValue = homeScreenViewModel.analysisProgress?.first ?: 0f,
         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
     )
 
@@ -162,14 +162,7 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
                         )
                     }
                     AnimatedContent(targetState = homeScreenViewModel.analysisInProgress) { aip ->
-                        if (aip == null) {
-                            Button(
-                                onClick = { homeScreenViewModel.analyseAllPlaylist() },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Text(text = "Analyse")
-                            }
-                        } else {
+                        if (aip) {
                             Column {
                                 LinearProgressIndicator(
                                     progress = animatedProgress,
@@ -177,7 +170,7 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
                                         .fillMaxWidth()
                                         .padding(8.dp)
                                 )
-                                homeScreenViewModel.analysisInProgress?.second?.let {
+                                homeScreenViewModel.analysisProgress?.second?.let {
                                     Text(
                                         text = it,
                                         modifier = Modifier.fillMaxWidth(),
@@ -185,6 +178,13 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
                                         textAlign = TextAlign.Center
                                     )
                                 }
+                            }
+                        } else {
+                            Button(
+                                onClick = { homeScreenViewModel.analyseAllPlaylist() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(text = "Analyse")
                             }
                         }
                     }
