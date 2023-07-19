@@ -4,9 +4,9 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kaeonx.poweramphelper.database.AppDatabase
-import com.kaeonx.poweramphelper.database.MusicFolder
 import com.kaeonx.poweramphelper.database.MusicFolderRepository
 import com.kaeonx.poweramphelper.database.MusicFolderState
+import com.kaeonx.poweramphelper.database.MusicFolderWithStatistics
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -28,26 +28,27 @@ internal class LanguageScreenViewModel(application: Application) : AndroidViewMo
 //        keyStringValuePairRepository.getFlow(listOf(M3U8_DIR_URI_KSVP_KEY, MUSIC_DIR_URI_KSVP_KEY))
 
     private val musicFolderRepository = MusicFolderRepository(appDatabaseInstance.musicFolderDao())
-    private val musicFoldersFlow = musicFolderRepository.getAllFlow()
+    private val musicFoldersWithStatisticsFlow = musicFolderRepository.getAllWithStatisticsFlow()
 
-    internal val languageScreenState = musicFoldersFlow.map { musicFolders ->
-        LanguageScreenState(
-            musicFolders = musicFolders
+    internal val languageScreenState =
+        musicFoldersWithStatisticsFlow.map { musicFoldersWithStatistics ->
+            LanguageScreenState(
+                musicFoldersWithStatistics = musicFoldersWithStatistics
+            )
+        }.stateIn(
+            viewModelScope,
+            SharingStarted.Lazily,
+            LanguageScreenState(
+                musicFoldersWithStatistics = listOf()
+            )
         )
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.Lazily,
-        LanguageScreenState(
-            musicFolders = listOf()
-        )
-    )
     // This pattern is better when there are multiple components listening in that should see
     // the same values. The combine code (hot flow) only runs once for all observers. If each
     // observer collected from a cold flow, the combine code runs once for each observer.
     // Courtesy of https://stackoverflow.com/a/66889741
 
 
-    internal fun userToggle(musicFolder: MusicFolder) {
+    internal fun userToggle(musicFolder: MusicFolderWithStatistics) {
         /*
             NOT DONE     -[User tick]->                                   DONE
             NOT DONE     <-[User untick]-                                 DONE
@@ -62,9 +63,11 @@ internal class LanguageScreenViewModel(application: Application) : AndroidViewMo
                         doneMillis = System.currentTimeMillis()
                     )
                 }
+
                 MusicFolderState.DONE -> {
                     musicFolderRepository.userUntick(musicFolder.encodedUri)
                 }
+
                 MusicFolderState.DONE_AUTO_RESET -> {
                     musicFolderRepository.userTick(
                         encodedUri = musicFolder.encodedUri,

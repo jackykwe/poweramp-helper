@@ -1,7 +1,5 @@
 package com.kaeonx.poweramphelper.ui.screens.home
 
-import android.content.ContentResolver
-import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
@@ -22,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -31,9 +30,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kaeonx.poweramphelper.LocalSnackbarHostState
-import java.io.BufferedReader
-import java.io.IOException
-import java.io.InputStreamReader
 
 private const val TAG = "HomeScreen"
 
@@ -63,14 +59,6 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
         targetValue = homeScreenViewModel.analysisProgress?.first ?: 0f,
         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
     )
-
-//    Log.i(TAG, "${m3u8Dir.toString()}")
-//    Log.i(TAG, "${m3u8Dir?.listFiles().toString()}")
-//    Log.i(TAG, "${m3u8Dir?.listFiles()?.size}")
-//    m3u8Dir?.listFiles()?.forEach { f ->
-//        Log.i(TAG, f.name ?: "????")
-//        Log.e(TAG, readTextFromUri(context.contentResolver, f.uri))
-//    }
 
     Column(
         modifier = Modifier.padding(horizontal = 8.dp),
@@ -146,15 +134,22 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
                         text = "Analysis",
                         fontWeight = FontWeight.Bold
                     )
-                    if (homeScreenState.lastAnalysisDateString != null) {
-                        Text(
-                            text = "Last performed at ${homeScreenState.lastAnalysisDateString}",
-                            fontStyle = FontStyle.Italic
-                        )
-                    }
+                    Text(
+                        text = "Assumed privileged .m3u8s:",
+                        modifier = Modifier.alpha(0.5f),
+                        fontSize = 12.sp,
+                    )
+                    Text(
+                        text = "All.m3u8\nSongs - CHN.m3u8\nSongs - Choral.m3u8\nSongs - ENG.m3u8\nSongs - JAP.m3u8\nSongs - KOR.m3u8\nSongs - Others.m3u8\nSongs.m3u8",
+                        modifier = Modifier
+                            .padding(start = 8.dp)
+                            .alpha(0.5f),
+                        fontSize = 12.sp,
+                        lineHeight = 14.sp
+                    )
                     AnimatedContent(targetState = homeScreenViewModel.analysisInProgress) { aip ->
                         if (aip) {
-                            Column {
+                            Column(modifier = Modifier.padding(16.dp)) {
                                 LinearProgressIndicator(
                                     progress = animatedProgress,
                                     modifier = Modifier
@@ -179,23 +174,16 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
                             }
                         }
                     }
+                    if (homeScreenState.lastAnalysisDateString != null) {
+                        Text(
+                            text = "Last performed at ${homeScreenState.lastAnalysisDateString}",
+                            modifier = Modifier.fillMaxWidth(),
+                            fontStyle = FontStyle.Italic,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }
     }
-}
-
-@Throws(IOException::class)
-private fun readTextFromUri(contentResolver: ContentResolver, uri: Uri): String {
-    val stringBuilder = StringBuilder()
-    contentResolver.openInputStream(uri)?.use { inputStream ->
-        BufferedReader(InputStreamReader(inputStream)).use { reader ->
-            var line: String? = reader.readLine()
-            while (line != null) {
-                stringBuilder.append(line)
-                line = reader.readLine()
-            }
-        }
-    }
-    return stringBuilder.toString()
 }

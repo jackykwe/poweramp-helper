@@ -16,6 +16,10 @@ internal class MusicFolderRepository(private val musicFolderDAO: MusicFolderDAO)
         return musicFolderDAO.getAllFlow().distinctUntilChanged()
     }
 
+    internal fun getAllWithStatisticsFlow(): Flow<List<MusicFolderWithStatistics>> {
+        return musicFolderDAO.getAllWithStatisticsFlow().distinctUntilChanged()
+    }
+
     internal suspend fun userTick(encodedUri: String, doneMillis: Long) {
         musicFolderDAO.userTick(encodedUri, doneMillis)
     }

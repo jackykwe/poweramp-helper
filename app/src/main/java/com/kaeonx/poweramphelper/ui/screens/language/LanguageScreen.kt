@@ -1,5 +1,7 @@
 package com.kaeonx.poweramphelper.ui.screens.language
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -13,8 +15,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -26,12 +30,23 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kaeonx.poweramphelper.R
 import com.kaeonx.poweramphelper.database.MusicFolderState
+import com.kaeonx.poweramphelper.database.MusicFolderWithStatistics
+import com.kaeonx.poweramphelper.utils.millisToDisplayWithoutTZ
 
 private val superscriptStyle = SpanStyle(
     fontSize = 10.sp,
-    fontWeight = FontWeight.Bold,
+    fontWeight = FontWeight.Light,
     baselineShift = BaselineShift.Superscript
 )
+
+private val subscriptStyle = SpanStyle(
+    fontSize = 10.sp,
+    fontWeight = FontWeight.Light,
+    baselineShift = BaselineShift.Subscript
+)
+
+private val greenStyle = SpanStyle(color = Color.Green)
+private val redStyle = SpanStyle(color = Color.Red)
 
 @Composable
 internal fun LanguageScreen(languageScreenViewModel: LanguageScreenViewModel = viewModel()) {
@@ -42,47 +57,29 @@ internal fun LanguageScreen(languageScreenViewModel: LanguageScreenViewModel = v
         contentPadding = PaddingValues(horizontal = 8.dp)
     ) {
         items(
-            items = languageScreenState.musicFolders,
+            items = languageScreenState.musicFoldersWithStatistics,
             key = { it.encodedUri }
         ) {
             ListItem(
-                headlineContent = { Text(text = it.displayName) },
+                headlineContent = { Text(text = it.dirName) },
                 supportingContent = {
-                    Text(
-                        text = buildAnnotatedString {
-                            append("1")
-                            withStyle(superscriptStyle) {
-                                append("EN ")
-                            }
-                            append("1")
-                            withStyle(superscriptStyle) {
-                                append("CN ")
-                            }
-                            append("1")
-                            withStyle(superscriptStyle) {
-                                append("JP ")
-                            }
-                            append("1")
-                            withStyle(superscriptStyle) {
-                                append("KR ")
-                            }
-                            append("1")
-                            withStyle(superscriptStyle) {
-                                append("O ")
-                            }
-                            append("1")
-                            withStyle(superscriptStyle) {
-                                append("Ch")
-                            }
-                            append(" ⋅ ")
-                            append("99")
-                            withStyle(superscriptStyle) {
-                                append("U ")
-                            }
-                        },
-                        modifier = Modifier.alpha(0.66f),
-                        fontSize = 12.sp
-                    )
+                    Column {
+                        Text(
+                            text = generateLangSumAnnotatedString(it),
+                            modifier = Modifier.alpha(0.66f),
+                            fontSize = 12.sp,
+                            lineHeight = 16.sp
+                        )
+                        val timestampsReport = generateTimestampsReport(it)
+                        AnimatedVisibility(visible = timestampsReport.isNotBlank()) {
+                            Text(
+                                text = timestampsReport,
+                                modifier = Modifier.alpha(0.66f),
+                                fontSize = 12.sp,
+                                lineHeight = 16.sp
+                            )
+                        }
+                    }
                 },
                 trailingContent = {
                     IconButton(
@@ -104,6 +101,71 @@ internal fun LanguageScreen(languageScreenViewModel: LanguageScreenViewModel = v
                     }
                 }
             )
+        }
+    }
+}
+
+private fun generateLangSumAnnotatedString(stats: MusicFolderWithStatistics): AnnotatedString {
+    return buildAnnotatedString {
+        append(stats.langENSum.toString())
+        withStyle(superscriptStyle) {
+            append("EN  ")
+        }
+        append(stats.langCNSum.toString())
+        withStyle(superscriptStyle) {
+            append("CN  ")
+        }
+        append(stats.langJPSum.toString())
+        withStyle(superscriptStyle) {
+            append("JP  ")
+        }
+        append(stats.langKRSum.toString())
+        withStyle(superscriptStyle) {
+            append("KR  ")
+        }
+        append(stats.langOSum.toString())
+        withStyle(superscriptStyle) {
+            append("O  ")
+        }
+        append(stats.langChSum.toString())
+        withStyle(superscriptStyle) {
+            append("Ch")
+        }
+        append("\n")
+        append(stats.langSongSum.toString())
+        withStyle(subscriptStyle) {
+            append("Song  ")
+        }
+        append((stats.fileCount - stats.langSongSum).toString())
+        withStyle(subscriptStyle) {
+            append("-  ")
+        }
+        append(stats.fileCount.toString())
+        withStyle(subscriptStyle) {
+            append("Σ  ")
+        }
+    }
+}
+
+private fun generateTimestampsReport(stats: MusicFolderWithStatistics): AnnotatedString {
+    return buildAnnotatedString {
+        when (stats.state) {
+            MusicFolderState.NOT_DONE -> {}
+            MusicFolderState.DONE -> {
+                withStyle(greenStyle) {
+                    append("(done) ")
+                    append(millisToDisplayWithoutTZ(stats.doneMillis!!))
+                }
+            }
+
+            MusicFolderState.DONE_AUTO_RESET -> {
+                withStyle(redStyle) {
+                    append("(done) ")
+                    append(millisToDisplayWithoutTZ(stats.doneMillis!!))
+                    append("\n(reset) ")
+                    append(millisToDisplayWithoutTZ(stats.resetMillis!!))
+                }
+            }
         }
     }
 }

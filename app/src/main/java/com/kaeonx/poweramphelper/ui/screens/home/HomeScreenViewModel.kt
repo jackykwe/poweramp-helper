@@ -2,12 +2,9 @@ package com.kaeonx.poweramphelper.ui.screens.home
 
 import android.annotation.SuppressLint
 import android.app.Application
-import android.content.ActivityNotFoundException
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.provider.DocumentsContract.Document.COLUMN_LAST_MODIFIED
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -19,7 +16,10 @@ import com.kaeonx.poweramphelper.database.KeyStringValuePairRepository
 import com.kaeonx.poweramphelper.database.LAST_ANALYSIS_MILLIS_KSVP_KEY
 import com.kaeonx.poweramphelper.database.M3U8_DIR_URI_KSVP_KEY
 import com.kaeonx.poweramphelper.database.MUSIC_DIR_URI_KSVP_KEY
+import com.kaeonx.poweramphelper.database.MusicFile
+import com.kaeonx.poweramphelper.database.MusicFileRepository
 import com.kaeonx.poweramphelper.database.MusicFolderRepository
+import com.kaeonx.poweramphelper.utils.millisToDisplayWithTZ
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
@@ -29,9 +29,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
+import java.io.BufferedReader
+import java.io.InputStreamReader
 
 private const val TAG = "homeScreenViewModel"
 
@@ -62,9 +61,7 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
                 m3u8DirName = m3u8Dir?.name,
                 m3u8Count = m3u8Dir?.listFiles()?.size ?: 0,
                 musicDirName = musicDir?.name,
-                lastAnalysisDateString = lastAnalysisMillis?.let {
-                    SimpleDateFormat("HHmmss ddMMyy z", Locale.UK).format(Date(it))
-                }
+                lastAnalysisDateString = lastAnalysisMillis?.let { millisToDisplayWithTZ(it) }
             )
         }.stateIn(
             viewModelScope,
@@ -78,6 +75,8 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
 
     private val musicFolderRepository = MusicFolderRepository(appDatabaseInstance.musicFolderDao())
     private val musicFoldersFlow = musicFolderRepository.getAllFlow()
+
+    private val musicFileRepository = MusicFileRepository(appDatabaseInstance.musicFileDao())
 
     internal var analysisInProgress by mutableStateOf(false)
         private set
@@ -108,24 +107,25 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
 
     @SuppressLint("Range")
     internal fun analyseAllPlaylist() {
+        // TODO: Handle nulls properly; they shldn't be there
+        // TODO: Reorganise code, this is monolithic
         analysisInProgress = true
-        analysisProgress = Pair(0f, "Starting...")
+        analysisProgress = Pair(0f, "Starting…")
         val startMillis = System.currentTimeMillis()
         viewModelScope.launch(Dispatchers.IO) {
-            analysisProgress = Pair(0.1f, "Opening music directory...")
             val uris = urisFlow.first()
             val musicDirDF = uris[MUSIC_DIR_URI_KSVP_KEY]?.let {
                 DocumentFile.fromTreeUri(applicationContext, Uri.parse(it))
             } ?: return@launch
 
-            analysisProgress = Pair(0.2f, "Syncing music directory with database...")
+            analysisProgress = Pair(0.1f, "Syncing music directory with database…")
             musicFolderRepository.ensureFoldersSane(
                 musicDirDF.listFiles()
                     .filterNot { it.name!!.startsWith(".") }
                     .map { Pair(it.uri.toString(), it.name!!) }
             )
 
-            analysisProgress = Pair(0.3f, "Unticking folders with more recent language changes...")
+            analysisProgress = Pair(0.2f, "Unticking folders with more recent language changes…")
             val musicFolders = musicFoldersFlow.first()
             musicFolderRepository.automaticUntick(
                 // Find all folders whose last modified is more recent than their doneMillis
@@ -144,7 +144,69 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
                 resetMillis = startMillis
             )
 
-            analysisProgress = Pair(1f, "Finishing up...")
+            val musicFolderNameToEncodedUri = musicFolders.associate { it.dirName to it.encodedUri }
+            val m3u8DirDF = uris[M3U8_DIR_URI_KSVP_KEY]?.let {
+                DocumentFile.fromTreeUri(applicationContext, Uri.parse(it))
+            } ?: return@launch
+
+            analysisProgress = Pair(0.3f, "Reading \"All.m3u8\"…")
+            m3u8DirDF.findFile("All.m3u8")?.let { df ->
+                musicFileRepository.reset()
+                val presentFiles = readM3U8WithRating(df, musicFolderNameToEncodedUri)
+                analysisProgress = Pair(0.35f, "Syncing \"All.m3u8\" with database…")
+                musicFileRepository.ensurePresentFiles(presentFiles)
+            }
+
+            analysisProgress = Pair(0.4f, "Reading \"Songs - Choral.m3u8\"…")
+            m3u8DirDF.findFile("Songs - Choral.m3u8")?.let { df ->
+                val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
+                analysisProgress = Pair(0.45f, "Syncing \"Songs - Choral.m3u8\" with database…")
+                langFiles.forEach { musicFileRepository.setLangCh(it.first, it.second) }
+            }
+
+            analysisProgress = Pair(0.5f, "Reading \"Songs - CHN.m3u8\"…")
+            m3u8DirDF.findFile("Songs - CHN.m3u8")?.let { df ->
+                val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
+                analysisProgress = Pair(0.55f, "Syncing \"Songs - CHN.m3u8\" with database…")
+                langFiles.forEach { musicFileRepository.setLangCN(it.first, it.second) }
+            }
+
+            analysisProgress = Pair(0.6f, "Reading \"Songs - ENG.m3u8\"…")
+            m3u8DirDF.findFile("Songs - ENG.m3u8")?.let { df ->
+                val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
+                analysisProgress = Pair(0.65f, "Syncing \"Songs - ENG.m3u8\" with database…")
+                langFiles.forEach { musicFileRepository.setLangEN(it.first, it.second) }
+            }
+
+            analysisProgress = Pair(0.7f, "Reading \"Songs - JAP.m3u8\"…")
+            m3u8DirDF.findFile("Songs - JAP.m3u8")?.let { df ->
+                val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
+                analysisProgress = Pair(0.75f, "Syncing \"Songs - JAP.m3u8\" with database…")
+                langFiles.forEach { musicFileRepository.setLangJP(it.first, it.second) }
+            }
+
+            analysisProgress = Pair(0.8f, "Reading \"Songs - KOR.m3u8\"…")
+            m3u8DirDF.findFile("Songs - KOR.m3u8")?.let { df ->
+                val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
+                analysisProgress = Pair(0.85f, "Syncing \"Songs - KOR.m3u8\" with database…")
+                langFiles.forEach { musicFileRepository.setLangKR(it.first, it.second) }
+            }
+
+            analysisProgress = Pair(0.9f, "Reading \"Songs - Others.m3u8\"…")
+            m3u8DirDF.findFile("Songs - Others.m3u8")?.let { df ->
+                val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
+                analysisProgress = Pair(0.95f, "Syncing \"Songs - Others.m3u8\" with database…")
+                langFiles.forEach { musicFileRepository.setLangO(it.first, it.second) }
+            }
+
+            analysisProgress = Pair(0.6f, "Reading \"Songs.m3u8\"…")
+            m3u8DirDF.findFile("Songs.m3u8")?.let { df ->
+                val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
+                analysisProgress = Pair(0.65f, "Syncing \"Songs.m3u8\" with database…")
+                langFiles.forEach { musicFileRepository.setLangSong(it.first, it.second) }
+            }
+
+            analysisProgress = Pair(1f, "Finishing up…")
             keyStringValuePairRepository.put(
                 LAST_ANALYSIS_MILLIS_KSVP_KEY to startMillis.toString()
             )
@@ -154,23 +216,56 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
         }
     }
 
-    internal fun openAudioPlayer(context: Context, uri: Uri) {
-        // Mechanism documented @ https://developer.android.com/training/basics/intents/sending
-        val intent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(uri, "audio/mpeg")
+    private fun readM3U8WithRating(
+        m3u8Df: DocumentFile,
+        musicFolderNameToEncodedUri: Map<String, String>
+    ): List<MusicFile> {
+        val result = arrayListOf<MusicFile>()
+        applicationContext.contentResolver.openInputStream(m3u8Df.uri)?.use { inputStream ->
+            BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                reader.readLine()  // Skip first line
+                var line: String? = reader.readLine()
+                while (line != null) {
+                    val rating = line.substringAfter("#EXT-X-RATING:").toInt()
+                    line = reader.readLine()
+                    val musicFolderMusicFile = line.split("/").takeLast(2)
+                    val musicFolderName = musicFolderMusicFile[0]
+                    val musicFileName = musicFolderMusicFile[1]
+                    val parentDirEncodedUri = musicFolderNameToEncodedUri[musicFolderName]!!
+                    result.add(
+                        MusicFile(
+                            parentDirEncodedUri = parentDirEncodedUri,
+                            fileName = musicFileName,
+                            rating = rating
+                        )
+                    )
+                    line = reader.readLine()
+                }
+            }
         }
-
-        try {
-            context.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            // Define what your app should do if no activity can handle the intent.
-            Log.e(TAG, "No music players exist on the device?")
-        }
+        return result
     }
-}
 
-private fun resolveUri(uri: Uri, appendUnencodedPath: String): Uri {
-    return Uri.parse(
-        uri.toString() + Uri.encode("/$appendUnencodedPath")
-    )
+    private fun readM3U8WithoutRating(
+        m3u8Df: DocumentFile,
+        musicFolderNameToEncodedUri: Map<String, String>
+    ): List<Pair<String, String>> {
+        val result = arrayListOf<Pair<String, String>>()
+        applicationContext.contentResolver.openInputStream(m3u8Df.uri)?.use { inputStream ->
+            BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                reader.readLine()  // Skip first line
+                var line: String? = reader.readLine()
+                while (line != null) {
+                    line = reader.readLine()  // Only care about second of each group of two lines
+                    val musicFolderMusicFile = line.split("/").takeLast(2)
+                    val musicFolderName = musicFolderMusicFile[0]
+                    val musicFileName = musicFolderMusicFile[1]
+                    val parentDirEncodedUri = musicFolderNameToEncodedUri[musicFolderName]!!
+                    result.add(Pair(parentDirEncodedUri, musicFileName))
+                    line = reader.readLine()
+                }
+            }
+        }
+        return result
+    }
 }

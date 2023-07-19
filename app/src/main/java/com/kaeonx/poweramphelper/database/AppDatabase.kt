@@ -11,12 +11,17 @@ private const val TAG = "appDatabase"
 @Database(
     entities = [
         KeyStringValuePair::class,
+        MusicFile::class,
         MusicFolder::class,
+    ],
+    views = [
+        MusicFolderWithStatistics::class
     ],
     version = 1
 )
 internal abstract class AppDatabase : RoomDatabase() {
     internal abstract fun keyStringValuePairDao(): KeyStringValuePairDAO
+    internal abstract fun musicFileDao(): MusicFileDAO
     internal abstract fun musicFolderDao(): MusicFolderDAO
 
     // Handling singleton within an abstract class instead of object (more Kotlin-like)
