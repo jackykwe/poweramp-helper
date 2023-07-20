@@ -5,5 +5,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 internal fun RatingScreen() {
-    Text(text = "rating")
+    Text(text = "壱弐参肆伍")
 }
