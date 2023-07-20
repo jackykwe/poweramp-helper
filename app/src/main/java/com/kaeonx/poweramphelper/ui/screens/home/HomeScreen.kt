@@ -17,11 +17,9 @@ import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -29,12 +27,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.kaeonx.poweramphelper.LocalSnackbarHostState
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) {
-    val context = LocalContext.current
     val homeScreenState by homeScreenViewModel.homeScreenState.collectAsStateWithLifecycle()
 
     // Originally courtesy of https://stackoverflow.com/a/67156998
@@ -48,11 +44,7 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
             uri?.let { homeScreenViewModel.saveM3U8DirUri(it) }
         }
 
-    // Snackbar stuff
-    val snackbarHostState = LocalSnackbarHostState.current
-    val scope = rememberCoroutineScope()
-
-//    // Progress bar stuff
+    // Progress bar stuff
     val animatedProgress by animateFloatAsState(
         targetValue = homeScreenViewModel.analysisProgress?.first ?: 0f,
         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
