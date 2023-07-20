@@ -34,13 +34,13 @@ internal data class MusicFolderWithLangStats(
     internal val doneMillis: Long?,  // null if not done
     internal val resetMillis: Long?,  // null if never reset
     internal val fileCount: Int,
+    internal val minusCount: Int,
     internal val langChSum: Int,
     internal val langCNSum: Int,
     internal val langENSum: Int,
     internal val langJPSum: Int,
     internal val langKRSum: Int,
     internal val langOSum: Int,
-    internal val minusCount: Int,
     internal val pendingFirstSort: Int
 ) {
     internal val state: MusicFolderState

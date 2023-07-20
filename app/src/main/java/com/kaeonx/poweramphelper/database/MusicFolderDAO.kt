@@ -27,7 +27,7 @@ internal interface MusicFolderDAO {
         "INNER JOIN (SELECT `parentDirEncodedUri`, count(`fileName`) AS fileCount, " +
         "            sum(`langCh`) AS `langChSum`, sum(`langCN`) AS `langCNSum`, sum(`langEN`) AS `langENSum`, " +
         "            sum(`langJP`) AS `langJPSum`, sum(`langKR`) AS `langKRSum`, sum(`langO`) AS `langOSum`, " +
-        "            count(`fileName`) - sum(`langCh`) - sum(`langCN`) - sum(`langEN`) - sum(`langJP`) - sum(`langKR`) - sum(`langO`) AS `minusCount` " +
+        "            count(`fileName`) - sum(`langCh` = 1 OR `langCN` = 1 OR `langEN` = 1 OR `langJP` = 1 OR `langKR` = 1 OR `langO` = 1) AS `minusCount` " +
         "            FROM musicfile GROUP BY `parentDirEncodedUri`) AS subquery " +
         "ON musicfolder.encodedUri = subquery.parentDirEncodedUri " +
         "ORDER BY CASE WHEN :pendingFirstSort THEN `pendingFirstSort` END ASC, " +
@@ -52,7 +52,7 @@ internal interface MusicFolderDAO {
         "INNER JOIN (SELECT `parentDirEncodedUri`, count(`fileName`) AS fileCount, " +
         "            sum(`langCh`) AS `langChSum`, sum(`langCN`) AS `langCNSum`, sum(`langEN`) AS `langENSum`, " +
         "            sum(`langJP`) AS `langJPSum`, sum(`langKR`) AS `langKRSum`, sum(`langO`) AS `langOSum`, " +
-        "            count(`fileName`) - sum(`langCh`) - sum(`langCN`) - sum(`langEN`) - sum(`langJP`) - sum(`langKR`) - sum(`langO`) AS `minusCount` " +
+        "            count(`fileName`) - sum(`langCh` = 1 OR `langCN` = 1 OR `langEN` = 1 OR `langJP` = 1 OR `langKR` = 1 OR `langO` = 1) AS `minusCount` " +
         "            FROM musicfile GROUP BY `parentDirEncodedUri`) AS subquery " +
         "ON musicfolder.encodedUri = subquery.parentDirEncodedUri " +
         "ORDER BY CASE WHEN :pendingFirstSort THEN `pendingFirstSort` END ASC, " +

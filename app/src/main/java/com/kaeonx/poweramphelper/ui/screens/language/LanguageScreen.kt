@@ -273,14 +273,14 @@ private fun generateLangSumAnnotatedString(stats: MusicFolderWithLangStats): Ann
             append("Ch")
         }
         append("\n")
-//        append(stats.langSongSum.toString())
-//        withStyle(subscriptStyle) {
-//            append("Song  ")
-//        }
-//        append((stats.fileCount - stats.langSongSum).toString())
-//        withStyle(subscriptStyle) {
-//            append("-  ")
-//        }
+        append((stats.fileCount - stats.minusCount).toString())
+        withStyle(subscriptStyle) {
+            append("Song  ")
+        }
+        append((stats.minusCount).toString())
+        withStyle(subscriptStyle) {
+            append("-  ")
+        }
         append(stats.fileCount.toString())
         withStyle(subscriptStyle) {
             append("Σ  ")
