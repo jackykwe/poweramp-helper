@@ -1,6 +1,7 @@
 package com.kaeonx.poweramphelper.database
 
 import com.kaeonx.poweramphelper.ui.screens.language.LanguageScreenSortOption
+import com.kaeonx.poweramphelper.ui.screens.rating.RatingScreenSortOption
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -20,7 +21,7 @@ internal class MusicFolderRepository(private val musicFolderDAO: MusicFolderDAO)
     internal fun getAllWithLangStatsAscendingFlow(
         sortOption: LanguageScreenSortOption,
         pendingFirstSort: Boolean
-    ): Flow<List<MusicFolderWithLangStats>> {
+    ): Flow<List<MusicFolderWithLangStatsDB>> {
         return musicFolderDAO.getAllWithLangStatsAscendingFlow(sortOption.display, pendingFirstSort)
             .distinctUntilChanged()
     }
@@ -28,8 +29,22 @@ internal class MusicFolderRepository(private val musicFolderDAO: MusicFolderDAO)
     internal fun getAllWithLangStatsDescendingFlow(
         sortOption: LanguageScreenSortOption,
         pendingFirstSort: Boolean
-    ): Flow<List<MusicFolderWithLangStats>> {
+    ): Flow<List<MusicFolderWithLangStatsDB>> {
         return musicFolderDAO.getAllWithLangStatsDescendingFlow(sortOption.display, pendingFirstSort)
+            .distinctUntilChanged()
+    }
+
+    internal fun getAllWithRatingStatsAscendingFlow(
+        sortOption: RatingScreenSortOption
+    ): Flow<List<MusicFolderWithRatingStatsDB>> {
+        return musicFolderDAO.getAllWithRatingStatsAscendingFlow(sortOption.display)
+            .distinctUntilChanged()
+    }
+
+    internal fun getAllWithRatingStatsDescendingFlow(
+        sortOption: RatingScreenSortOption
+    ): Flow<List<MusicFolderWithRatingStatsDB>> {
+        return musicFolderDAO.getAllWithRatingStatsDescendingFlow(sortOption.display)
             .distinctUntilChanged()
     }
 

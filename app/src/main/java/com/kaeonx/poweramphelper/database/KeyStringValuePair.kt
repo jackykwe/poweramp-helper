@@ -10,6 +10,8 @@ internal const val LAST_ANALYSIS_MILLIS_KSVP_KEY = "lastAnalysisTs"
 internal const val LANG_SCR_SORT_OPTION_KSVP_KEY = "langScrSortOption"
 internal const val LANG_SCR_PEND_FIRST_SORT_KSVP_KEY = "langScrPendFirstSort"
 internal const val LANG_SCR_DESC_SORT_KSVP_KEY = "langScrDescSort"
+internal const val RATING_SCR_SORT_OPTION_KSVP_KEY = "ratingScrSortOption"
+internal const val RATING_SCR_DESC_SORT_KSVP_KEY = "ratingScrDescSort"
 
 @Entity
 internal data class KeyStringValuePair(

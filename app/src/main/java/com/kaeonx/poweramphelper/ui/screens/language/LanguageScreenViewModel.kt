@@ -1,6 +1,14 @@
 package com.kaeonx.poweramphelper.ui.screens.language
 
 import android.app.Application
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.kaeonx.poweramphelper.database.AppDatabase
@@ -10,7 +18,9 @@ import com.kaeonx.poweramphelper.database.LANG_SCR_PEND_FIRST_SORT_KSVP_KEY
 import com.kaeonx.poweramphelper.database.LANG_SCR_SORT_OPTION_KSVP_KEY
 import com.kaeonx.poweramphelper.database.MusicFolderRepository
 import com.kaeonx.poweramphelper.database.MusicFolderState
-import com.kaeonx.poweramphelper.database.MusicFolderWithLangStats
+import com.kaeonx.poweramphelper.database.MusicFolderWithLangStatsDB
+import com.kaeonx.poweramphelper.database.MusicFolderWithLangStatsUI
+import com.kaeonx.poweramphelper.utils.millisToDisplayWithoutTZ
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
@@ -49,17 +59,35 @@ internal class LanguageScreenViewModel(application: Application) : AndroidViewMo
         )
         val pendingFirstSort = sortOptions[LANG_SCR_PEND_FIRST_SORT_KSVP_KEY].toBoolean()
         val descendingSort = sortOptions[LANG_SCR_DESC_SORT_KSVP_KEY].toBoolean()
-        val musicFoldersWithStatistics = if (descendingSort) {
+        val musicFoldersWithLangStatsFlow = if (descendingSort) {
             musicFolderRepository.getAllWithLangStatsDescendingFlow(sortOption, pendingFirstSort)
         } else {
             musicFolderRepository.getAllWithLangStatsAscendingFlow(sortOption, pendingFirstSort)
         }
-        musicFoldersWithStatistics.map {
+        musicFoldersWithLangStatsFlow.map { musicFoldersWithLangStats ->
             LanguageScreenState(
-                musicFoldersWithStatistics = it,
+                musicFoldersWithStatistics = musicFoldersWithLangStats.map {
+                    val state = when {
+                        it.doneMillis == null -> MusicFolderState.NOT_DONE
+                        it.resetMillis == null -> MusicFolderState.DONE
+                        else -> MusicFolderState.DONE_AUTO_RESET
+                    }
+                    MusicFolderWithLangStatsUI(
+                        encodedUri = it.encodedUri,
+                        dirName = it.dirName,
+                        state = state,
+                        countReport = generateCountReportAS(it),
+                        timestampsReport = generateTimestampsReportAS(it, state)
+                    )
+                },
                 sortOption = sortOption,
                 pendingFirstSort = pendingFirstSort,
-                descendingSort = descendingSort
+                descendingSort = descendingSort,
+                sortString = generateSortString(
+                    sortOption = sortOption,
+                    pendingFirstSort = pendingFirstSort,
+                    descendingSort = descendingSort,
+                ),
             )
         }
     }.stateIn(
@@ -69,7 +97,8 @@ internal class LanguageScreenViewModel(application: Application) : AndroidViewMo
             musicFoldersWithStatistics = listOf(),
             sortOption = LanguageScreenSortOption.NAME,
             pendingFirstSort = false,
-            descendingSort = false
+            descendingSort = false,
+            sortString = ""
         )
     )
     // This pattern is better when there are multiple components listening in that should see
@@ -78,7 +107,7 @@ internal class LanguageScreenViewModel(application: Application) : AndroidViewMo
     // Courtesy of https://stackoverflow.com/a/66889741
 
 
-    internal fun userToggle(musicFolder: MusicFolderWithLangStats) {
+    internal fun userToggle(musicFolder: MusicFolderWithLangStatsUI) {
         /*
             NOT DONE     -[User tick]->                                   DONE
             NOT DONE     <-[User untick]-                                 DONE
@@ -121,6 +150,105 @@ internal class LanguageScreenViewModel(application: Application) : AndroidViewMo
                     LANG_SCR_DESC_SORT_KSVP_KEY to descendingSort.toString()
                 )
             )
+        }
+    }
+
+    ////////////////////////
+    // UI State Functions //
+    ////////////////////////
+    private val superscriptStyle = SpanStyle(
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Light,
+        baselineShift = BaselineShift.Superscript
+    )
+
+    private val subscriptStyle = SpanStyle(
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Light,
+        baselineShift = BaselineShift.Subscript
+    )
+
+    private val greenStyle = SpanStyle(color = Color.Green)
+    private val redStyle = SpanStyle(color = Color.Red)
+
+    private fun generateCountReportAS(stats: MusicFolderWithLangStatsDB): AnnotatedString {
+        return buildAnnotatedString {
+            append(stats.langENSum.toString())
+            withStyle(superscriptStyle) {
+                append("EN  ")
+            }
+            append(stats.langCNSum.toString())
+            withStyle(superscriptStyle) {
+                append("CN  ")
+            }
+            append(stats.langJPSum.toString())
+            withStyle(superscriptStyle) {
+                append("JP  ")
+            }
+            append(stats.langKRSum.toString())
+            withStyle(superscriptStyle) {
+                append("KR  ")
+            }
+            append(stats.langOSum.toString())
+            withStyle(superscriptStyle) {
+                append("O  ")
+            }
+            append(stats.langChSum.toString())
+            withStyle(superscriptStyle) {
+                append("Ch")
+            }
+            append("\n")
+            append((stats.fileCount - stats.minusSum).toString())
+            withStyle(subscriptStyle) {
+                append("Song  ")
+            }
+            append((stats.minusSum).toString())
+            withStyle(subscriptStyle) {
+                append("-  ")
+            }
+            append(stats.fileCount.toString())
+            withStyle(subscriptStyle) {
+                append("Σ  ")
+            }
+        }
+    }
+
+    private fun generateTimestampsReportAS(
+        stats: MusicFolderWithLangStatsDB,
+        state: MusicFolderState
+    ): AnnotatedString {
+        return buildAnnotatedString {
+            when (state) {
+                MusicFolderState.NOT_DONE -> {}
+                MusicFolderState.DONE -> {
+                    withStyle(greenStyle) {
+                        append("(done) ")
+                        append(millisToDisplayWithoutTZ(stats.doneMillis!!))
+                    }
+                }
+
+                MusicFolderState.DONE_AUTO_RESET -> {
+                    withStyle(redStyle) {
+                        append("(done) ")
+                        append(millisToDisplayWithoutTZ(stats.doneMillis!!))
+                        append("\n(reset) ")
+                        append(millisToDisplayWithoutTZ(stats.resetMillis!!))
+                    }
+                }
+            }
+        }
+    }
+
+    private fun generateSortString(
+        sortOption: LanguageScreenSortOption,
+        pendingFirstSort: Boolean,
+        descendingSort: Boolean
+    ): String {
+        return buildString {
+            append("Sort: ")
+            append(sortOption.display)
+            if (pendingFirstSort) append(" ⋯")
+            if (descendingSort) append(" ▼") else append(" ▲")
         }
     }
 }

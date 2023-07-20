@@ -1,6 +1,6 @@
 package com.kaeonx.poweramphelper.database
 
-import androidx.room.DatabaseView
+import androidx.compose.ui.text.AnnotatedString
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -28,13 +28,13 @@ internal enum class MusicFolderState {
     DONE_AUTO_RESET
 }
 
-internal data class MusicFolderWithLangStats(
+internal data class MusicFolderWithLangStatsDB(
     internal val encodedUri: String,
     internal val dirName: String,
     internal val doneMillis: Long?,  // null if not done
     internal val resetMillis: Long?,  // null if never reset
     internal val fileCount: Int,
-    internal val minusCount: Int,
+    internal val minusSum: Int,
     internal val langChSum: Int,
     internal val langCNSum: Int,
     internal val langENSum: Int,
@@ -42,35 +42,49 @@ internal data class MusicFolderWithLangStats(
     internal val langKRSum: Int,
     internal val langOSum: Int,
     internal val pendingFirstSort: Int
-) {
-    internal val state: MusicFolderState
-        get() = when {
-            this.doneMillis == null -> MusicFolderState.NOT_DONE
-            this.resetMillis == null -> MusicFolderState.DONE
-            else -> MusicFolderState.DONE_AUTO_RESET
-        }
-}
-
-@DatabaseView(
-    "SELECT * FROM musicfolder " +
-    "INNER JOIN (SELECT `parentDirEncodedUri`, count(`fileName`) AS fileCount, " +
-    "            sum(`rating` = 0) AS `rating0Sum`, sum(`rating` = 1) AS `rating1Sum`, " +
-    "            sum(`rating` = 2) AS `rating2Sum`, sum(`rating` = 3) AS `rating3Sum`, " +
-    "            sum(`rating` = 4) AS `rating4Sum`, sum(`rating` = 5) AS `rating5Sum` " +
-    "            FROM musicfile GROUP BY `parentDirEncodedUri`) AS subquery " +
-    "ON musicfolder.encodedUri = subquery.parentDirEncodedUri " +
-    "ORDER BY dirName;"
 )
-internal data class MusicFolderWithRatingStats(
+
+internal data class MusicFolderWithLangStatsUI(
     internal val encodedUri: String,
     internal val dirName: String,
-    internal val doneMillis: Long?,  // null if not done
-    internal val resetMillis: Long?,  // null if never reset
+//    internal val doneMillis: Long?,  // null if not done
+//    internal val resetMillis: Long?,  // null if never reset
+//    internal val fileCount: Int,
+//    internal val minusSum: Int,
+//    internal val langChSum: Int,
+//    internal val langCNSum: Int,
+//    internal val langENSum: Int,
+//    internal val langJPSum: Int,
+//    internal val langKRSum: Int,
+//    internal val langOSum: Int,
+//    internal val pendingFirstSort: Int,
+    internal val state: MusicFolderState,  // added for UI
+    internal val countReport: AnnotatedString,  // added for UI
+    internal val timestampsReport: AnnotatedString  // added for UI
+)
+
+internal data class MusicFolderWithRatingStatsDB(
+    internal val encodedUri: String,
+    internal val dirName: String,
     internal val fileCount: Int,
-    internal val rating0Sum: Int,
-    internal val rating1Sum: Int,
-    internal val rating2Sum: Int,
-    internal val rating3Sum: Int,
-    internal val rating4Sum: Int,
-    internal val rating5Sum: Int
+    internal val rating0SSum: Int,
+    internal val rating1SSum: Int,
+    internal val rating2SSum: Int,
+    internal val rating3SSum: Int,
+    internal val rating4SSum: Int,
+    internal val rating5SSum: Int
+)
+
+internal data class MusicFolderWithRatingStatsUI(
+    internal val encodedUri: String,
+    internal val dirName: String,
+//    internal val fileCount: Int,
+//    internal val rating0SSum: Int,
+//    internal val rating1SSum: Int,
+//    internal val rating2SSum: Int,
+//    internal val rating3SSum: Int,
+//    internal val rating4SSum: Int,
+//    internal val rating5SSum: Int
+    internal val countReport: AnnotatedString,  // added for UI
+    internal val progressReport: AnnotatedString  // added for UI
 )
