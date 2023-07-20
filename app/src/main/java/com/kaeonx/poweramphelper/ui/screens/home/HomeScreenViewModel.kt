@@ -32,8 +32,6 @@ import kotlinx.coroutines.withContext
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
-private const val TAG = "homeScreenViewModel"
-
 internal class HomeScreenViewModel(application: Application) : AndroidViewModel(application) {
     // DONE: Other fields store reference to this leakable object;
     // It's OK, lasts till END of app. Problem is with activityContext.
@@ -149,61 +147,54 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
                 DocumentFile.fromTreeUri(applicationContext, Uri.parse(it))
             } ?: return@launch
 
-            analysisProgress = Pair(0.3f, "Reading \"All.m3u8\"…")
+            analysisProgress = Pair(0.3f, "[\"All.m3u8\"] Reading…")
             m3u8DirDF.findFile("All.m3u8")?.let { df ->
                 musicFileRepository.reset()
                 val presentFiles = readM3U8WithRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.35f, "Syncing \"All.m3u8\" with database…")
+                analysisProgress = Pair(0.35f, "[\"All.m3u8\"] Syncing with database…")
                 musicFileRepository.ensurePresentFiles(presentFiles)
             }
 
-            analysisProgress = Pair(0.4f, "Reading \"Songs - Choral.m3u8\"…")
+            analysisProgress = Pair(0.4f, "[\"Songs - Choral.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - Choral.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.45f, "Syncing \"Songs - Choral.m3u8\" with database…")
+                analysisProgress = Pair(0.45f, "[\"Songs - Choral.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangCh(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.5f, "Reading \"Songs - CHN.m3u8\"…")
+            analysisProgress = Pair(0.5f, "[\"Songs - CHN.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - CHN.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.55f, "Syncing \"Songs - CHN.m3u8\" with database…")
+                analysisProgress = Pair(0.55f, "[\"Songs - CHN.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangCN(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.6f, "Reading \"Songs - ENG.m3u8\"…")
+            analysisProgress = Pair(0.6f, "[\"Songs - ENG.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - ENG.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.65f, "Syncing \"Songs - ENG.m3u8\" with database…")
+                analysisProgress = Pair(0.65f, "[\"Songs - ENG.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangEN(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.7f, "Reading \"Songs - JAP.m3u8\"…")
+            analysisProgress = Pair(0.7f, "[\"Songs - JAP.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - JAP.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.75f, "Syncing \"Songs - JAP.m3u8\" with database…")
+                analysisProgress = Pair(0.75f, "[\"Songs - JAP.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangJP(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.8f, "Reading \"Songs - KOR.m3u8\"…")
+            analysisProgress = Pair(0.8f, "[\"Songs - KOR.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - KOR.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.85f, "Syncing \"Songs - KOR.m3u8\" with database…")
+                analysisProgress = Pair(0.85f, "[\"Songs - KOR.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangKR(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.9f, "Reading \"Songs - Others.m3u8\"…")
+            analysisProgress = Pair(0.9f, "[\"Songs - Others.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - Others.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.95f, "Syncing \"Songs - Others.m3u8\" with database…")
+                analysisProgress = Pair(0.95f, "[\"Songs - Others.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangO(it.first, it.second) }
-            }
-
-            analysisProgress = Pair(0.6f, "Reading \"Songs.m3u8\"…")
-            m3u8DirDF.findFile("Songs.m3u8")?.let { df ->
-                val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.65f, "Syncing \"Songs.m3u8\" with database…")
-                langFiles.forEach { musicFileRepository.setLangSong(it.first, it.second) }
             }
 
             analysisProgress = Pair(1f, "Finishing up…")

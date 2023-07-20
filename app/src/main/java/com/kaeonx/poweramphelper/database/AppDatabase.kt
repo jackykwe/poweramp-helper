@@ -14,9 +14,6 @@ private const val TAG = "appDatabase"
         MusicFile::class,
         MusicFolder::class,
     ],
-    views = [
-        MusicFolderWithStatistics::class
-    ],
     version = 1
 )
 internal abstract class AppDatabase : RoomDatabase() {

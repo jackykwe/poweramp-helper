@@ -1,5 +1,6 @@
 package com.kaeonx.poweramphelper.database
 
+import com.kaeonx.poweramphelper.ui.screens.language.LanguageScreenSortOption
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 
@@ -16,8 +17,20 @@ internal class MusicFolderRepository(private val musicFolderDAO: MusicFolderDAO)
         return musicFolderDAO.getAllFlow().distinctUntilChanged()
     }
 
-    internal fun getAllWithStatisticsFlow(): Flow<List<MusicFolderWithStatistics>> {
-        return musicFolderDAO.getAllWithStatisticsFlow().distinctUntilChanged()
+    internal fun getAllWithLangStatsAscendingFlow(
+        sortOption: LanguageScreenSortOption,
+        pendingFirstSort: Boolean
+    ): Flow<List<MusicFolderWithLangStats>> {
+        return musicFolderDAO.getAllWithLangStatsAscendingFlow(sortOption.display, pendingFirstSort)
+            .distinctUntilChanged()
+    }
+
+    internal fun getAllWithLangStatsDescendingFlow(
+        sortOption: LanguageScreenSortOption,
+        pendingFirstSort: Boolean
+    ): Flow<List<MusicFolderWithLangStats>> {
+        return musicFolderDAO.getAllWithLangStatsDescendingFlow(sortOption.display, pendingFirstSort)
+            .distinctUntilChanged()
     }
 
     internal suspend fun userTick(encodedUri: String, doneMillis: Long) {

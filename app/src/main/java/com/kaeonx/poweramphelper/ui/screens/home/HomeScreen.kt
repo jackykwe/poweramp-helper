@@ -31,8 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.kaeonx.poweramphelper.LocalSnackbarHostState
 
-private const val TAG = "HomeScreen"
-
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
 internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) {
@@ -140,7 +138,7 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
                         fontSize = 12.sp,
                     )
                     Text(
-                        text = "All.m3u8\nSongs - CHN.m3u8\nSongs - Choral.m3u8\nSongs - ENG.m3u8\nSongs - JAP.m3u8\nSongs - KOR.m3u8\nSongs - Others.m3u8\nSongs.m3u8",
+                        text = "All.m3u8\nSongs - CHN.m3u8\nSongs - Choral.m3u8\nSongs - ENG.m3u8\nSongs - JAP.m3u8\nSongs - KOR.m3u8\nSongs - Others.m3u8",
                         modifier = Modifier
                             .padding(start = 8.dp)
                             .alpha(0.5f),

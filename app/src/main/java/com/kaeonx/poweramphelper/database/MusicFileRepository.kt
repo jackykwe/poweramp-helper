@@ -32,10 +32,6 @@ internal class MusicFileRepository(private val musicFileDAO: MusicFileDAO) {
         musicFileDAO.setLangO(parentDirEncodedUri, fileName)
     }
 
-    internal suspend fun setLangSong(parentDirEncodedUri: String, fileName: String) {
-        musicFileDAO.setLangSong(parentDirEncodedUri, fileName)
-    }
-
     internal suspend fun ensurePresentFiles(musicFiles: List<MusicFile>) {
         musicFileDAO.ensurePresentFiles(musicFiles)
     }

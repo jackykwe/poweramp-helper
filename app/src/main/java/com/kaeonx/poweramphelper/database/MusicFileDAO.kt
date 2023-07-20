@@ -29,9 +29,6 @@ internal interface MusicFileDAO {
     @Query("UPDATE musicfile SET `langO` = 1 WHERE `parentDirEncodedUri` = :parentDirEncodedUri AND `fileName` = :fileName;")
     suspend fun setLangO(parentDirEncodedUri: String, fileName: String)
 
-    @Query("UPDATE musicfile SET langSong = 1 WHERE `parentDirEncodedUri` = :parentDirEncodedUri AND `fileName` = :fileName;")
-    suspend fun setLangSong(parentDirEncodedUri: String, fileName: String)
-
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun ensurePresentFiles(musicFiles: List<MusicFile>)
 

@@ -14,9 +14,9 @@ internal data class MusicFolder(
 
 internal enum class MusicFolderState {
     /*
-    [ ] NOT DONE     (doneMillis == null, resetMillis == null)
-    [v] DONE         (doneMillis != null, resetMillis == null)
-    [ ] DONE (RESET) (doneMillis != null, resetMillis != null)
+    [ ] NOT DONE     (doneMillis == null, resetMillis == null)  #2
+    [v] DONE         (doneMillis != null, resetMillis == null)  #3
+    [ ] DONE (RESET) (doneMillis != null, resetMillis != null)  #1
 
     NOT DONE     -[User tick]->                                   DONE
     NOT DONE     <-[User untick]-                                 DONE
@@ -28,17 +28,7 @@ internal enum class MusicFolderState {
     DONE_AUTO_RESET
 }
 
-// Inspiration courtesy of https://stackoverflow.com/a/62460199
-@DatabaseView(
-    "SELECT * FROM musicfolder " +
-    "INNER JOIN (SELECT `parentDirEncodedUri`, count(`fileName`) AS fileCount, " +
-    "            sum(`langCh`) AS `langChSum`, sum(`langCN`) AS `langCNSum`, sum(`langEN`) AS `langENSum`, " +
-    "            sum(`langJP`) AS `langJPSum`, sum(`langKR`) AS `langKRSum`, sum(`langO`) AS `langOSum`, " +
-            "            sum(langSong) AS langSongSum FROM musicfile GROUP BY `parentDirEncodedUri`) AS subquery " +
-    "ON musicfolder.encodedUri = subquery.parentDirEncodedUri " +
-    "ORDER BY dirName;"
-)
-internal data class MusicFolderWithStatistics(
+internal data class MusicFolderWithLangStats(
     internal val encodedUri: String,
     internal val dirName: String,
     internal val doneMillis: Long?,  // null if not done
@@ -50,7 +40,8 @@ internal data class MusicFolderWithStatistics(
     internal val langJPSum: Int,
     internal val langKRSum: Int,
     internal val langOSum: Int,
-    internal val langSongSum: Int
+    internal val minusCount: Int,
+    internal val pendingFirstSort: Int
 ) {
     internal val state: MusicFolderState
         get() = when {
@@ -59,3 +50,27 @@ internal data class MusicFolderWithStatistics(
             else -> MusicFolderState.DONE_AUTO_RESET
         }
 }
+
+@DatabaseView(
+    "SELECT * FROM musicfolder " +
+    "INNER JOIN (SELECT `parentDirEncodedUri`, count(`fileName`) AS fileCount, " +
+    "            sum(`rating` = 0) AS `rating0Sum`, sum(`rating` = 1) AS `rating1Sum`, " +
+    "            sum(`rating` = 2) AS `rating2Sum`, sum(`rating` = 3) AS `rating3Sum`, " +
+    "            sum(`rating` = 4) AS `rating4Sum`, sum(`rating` = 5) AS `rating5Sum` " +
+    "            FROM musicfile GROUP BY `parentDirEncodedUri`) AS subquery " +
+    "ON musicfolder.encodedUri = subquery.parentDirEncodedUri " +
+    "ORDER BY dirName;"
+)
+internal data class MusicFolderWithRatingStats(
+    internal val encodedUri: String,
+    internal val dirName: String,
+    internal val doneMillis: Long?,  // null if not done
+    internal val resetMillis: Long?,  // null if never reset
+    internal val fileCount: Int,
+    internal val rating0Sum: Int,
+    internal val rating1Sum: Int,
+    internal val rating2Sum: Int,
+    internal val rating3Sum: Int,
+    internal val rating4Sum: Int,
+    internal val rating5Sum: Int
+)

@@ -25,7 +25,6 @@ internal data class MusicFile(
     internal val langJP: Boolean = false,    // JAP
     internal val langKR: Boolean = false,    // KOR
     internal val langO: Boolean = false,     // Others
-    internal val langCh: Boolean = false,    // Choral
-    internal val langSong: Boolean = false  // Songs
+    internal val langCh: Boolean = false    // Choral
 )
 

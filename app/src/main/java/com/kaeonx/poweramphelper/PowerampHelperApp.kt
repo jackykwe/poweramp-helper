@@ -1,5 +1,12 @@
 package com.kaeonx.poweramphelper
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,6 +23,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -41,6 +49,12 @@ internal val LocalSnackbarHostState = compositionLocalOf<SnackbarHostState> {
 @Composable
 internal fun PowerampHelperApp() {
     val navController = rememberNavController()
+    // From https://developer.android.com/jetpack/compose/navigation#bottom-nav
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentDestination = navBackStackEntry?.destination
+
+    // For animation
+    val density = LocalDensity.current
 
     // For snackbars
     val snackbarHostState = remember { SnackbarHostState() }
@@ -49,20 +63,25 @@ internal fun PowerampHelperApp() {
     CompositionLocalProvider(LocalSnackbarHostState provides snackbarHostState) {
         Scaffold(
             topBar = {
-                CenterAlignedTopAppBar(
-                    title = {
-                        Text(
-                            text = stringResource(R.string.app_name),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                )
+                // Top App Bar hiding strategy courtesy of https://stackoverflow.com/a/71011124
+                AnimatedVisibility(
+                    visible = currentDestination?.route == PHDestination.Home.route,
+                    enter = slideInVertically() + expandVertically() + fadeIn(),
+                    exit = slideOutVertically() + shrinkVertically() + fadeOut()
+                ) {
+                    CenterAlignedTopAppBar(
+                        title = {
+                            Text(
+                                text = stringResource(R.string.app_name),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    )
+                }
             },
             bottomBar = {
                 NavigationBar {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
                     bottomNavBarItems.forEach { phDestination ->
                         NavigationBarItem(
                             icon = {
