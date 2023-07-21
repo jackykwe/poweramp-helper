@@ -54,8 +54,16 @@ internal sealed class PHDestinationHidden(
             "ratingFolder/$folderEncodedUri"
     }
 
+    internal object LanguageFolder : PHDestinationHidden(
+        route = "languageFolder/{folderEncodedUri}",
+        bottomBarRoute = PHDestinationWithIcon.Language.route
+    ) {
+        internal fun resolveRoute(folderEncodedUri: String): String =
+            "languageFolder/$folderEncodedUri"
+    }
+
     internal companion object {
         internal val items
-            get() = listOf(RatingFolder)
+            get() = listOf(RatingFolder, LanguageFolder)
     }
 }

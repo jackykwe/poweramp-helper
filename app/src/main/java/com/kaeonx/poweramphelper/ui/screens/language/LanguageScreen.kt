@@ -2,6 +2,7 @@ package com.kaeonx.poweramphelper.ui.screens.language
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,12 +41,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.kaeonx.poweramphelper.R
 import com.kaeonx.poweramphelper.database.MusicFolderState
+import com.kaeonx.poweramphelper.ui.PHDestinationHidden
+import com.kaeonx.poweramphelper.utils.mapToIntListString
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun LanguageScreen(languageScreenViewModel: LanguageScreenViewModel = viewModel()) {
+internal fun LanguageScreen(
+    navController: NavController,
+    languageScreenViewModel: LanguageScreenViewModel = viewModel()
+) {
     val languageScreenState by languageScreenViewModel.languageScreenState.collectAsStateWithLifecycle()
 
     // Dialog and Radio stuffs
@@ -83,7 +90,15 @@ internal fun LanguageScreen(languageScreenViewModel: LanguageScreenViewModel = v
             ) {
                 ListItem(
                     headlineContent = { Text(text = it.dirName) },
-                    modifier = Modifier.animateItemPlacement(),
+                    modifier = Modifier
+                        .animateItemPlacement()
+                        .clickable {
+                            navController.navigate(
+                                PHDestinationHidden.LanguageFolder.resolveRoute(
+                                    mapToIntListString(it.encodedUri)
+                                )
+                            )
+                        },
                     supportingContent = {
                         Column {
                             Text(

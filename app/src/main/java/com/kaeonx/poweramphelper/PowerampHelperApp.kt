@@ -33,6 +33,7 @@ import com.kaeonx.poweramphelper.ui.PHDestinationHidden
 import com.kaeonx.poweramphelper.ui.PHDestinationWithIcon
 import com.kaeonx.poweramphelper.ui.screens.home.HomeScreen
 import com.kaeonx.poweramphelper.ui.screens.language.LanguageScreen
+import com.kaeonx.poweramphelper.ui.screens.languageFolder.LanguageFolderScreen
 import com.kaeonx.poweramphelper.ui.screens.rating.RatingScreen
 import com.kaeonx.poweramphelper.ui.screens.ratingFolder.RatingFolderScreen
 
@@ -115,8 +116,21 @@ internal fun PowerampHelperApp() {
             startDestination = PHDestinationWithIcon.Home.route
         ) {
             composable(route = PHDestinationWithIcon.Home.route) { HomeScreen() }
-            composable(route = PHDestinationWithIcon.Language.route) { LanguageScreen() }
+            composable(route = PHDestinationWithIcon.Language.route) { LanguageScreen(navController) }
             composable(route = PHDestinationWithIcon.Rating.route) { RatingScreen(navController) }
+            composable(
+                route = PHDestinationHidden.LanguageFolder.route,
+                arguments = listOf(navArgument("folderEncodedUri") {
+                    type = NavType.StringType
+                })
+            ) { navBackStackEntry ->
+                LanguageFolderScreen(
+                    encodedFolderUri = navBackStackEntry.arguments?.getString("folderEncodedUri")
+                        ?: throw IllegalStateException(
+                            "Attempted to launch LanguageFolderScreen without navArgument folderEncodedUri"
+                        )
+                )
+            }
             composable(
                 route = PHDestinationHidden.RatingFolder.route,
                 arguments = listOf(navArgument("folderEncodedUri") {
