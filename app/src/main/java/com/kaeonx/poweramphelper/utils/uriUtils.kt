@@ -12,6 +12,12 @@ import java.io.InputStreamReader
 
 private const val TAG = "uriUtils"
 
+internal fun mapToIntListString(encodedUri: String) =
+    encodedUri.map { c -> c.code }.joinToString(",")
+
+internal fun mapFromIntLintString(intListString: String) =
+    intListString.split(",").map { intString -> intString.toInt().toChar() }.joinToString("")
+
 internal fun resolveUri(uri: Uri, appendUnencodedPath: String): Uri {
     return Uri.parse(
         uri.toString() + Uri.encode("/$appendUnencodedPath")

@@ -108,22 +108,20 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
         // TODO: Handle nulls properly; they shldn't be there
         // TODO: Reorganise code, this is monolithic
         analysisInProgress = true
-        analysisProgress = Pair(0f, "Starting…")
+        analysisProgress = Pair(0.01f, "Syncing music directory with database…")
         val startMillis = System.currentTimeMillis()
         viewModelScope.launch(Dispatchers.IO) {
             val uris = urisFlow.first()
             val musicDirDF = uris[MUSIC_DIR_URI_KSVP_KEY]?.let {
                 DocumentFile.fromTreeUri(applicationContext, Uri.parse(it))
             } ?: return@launch
-
-            analysisProgress = Pair(0.1f, "Syncing music directory with database…")
             musicFolderRepository.ensureFoldersSane(
                 musicDirDF.listFiles()
                     .filterNot { it.name!!.startsWith(".") }
                     .map { Pair(it.uri.toString(), it.name!!) }
             )
 
-            analysisProgress = Pair(0.2f, "Unticking folders with more recent language changes…")
+            analysisProgress = Pair(0.05f, "Unticking folders with more recent language changes…")
             val musicFolders = musicFoldersFlow.first()
             musicFolderRepository.automaticUntick(
                 // Find all folders whose last modified is more recent than their doneMillis
@@ -147,55 +145,70 @@ internal class HomeScreenViewModel(application: Application) : AndroidViewModel(
                 DocumentFile.fromTreeUri(applicationContext, Uri.parse(it))
             } ?: return@launch
 
-            analysisProgress = Pair(0.3f, "[\"All.m3u8\"] Reading…")
+            analysisProgress = Pair(0.1f, "[\"All.m3u8\"] Reading…")
             m3u8DirDF.findFile("All.m3u8")?.let { df ->
                 musicFileRepository.reset()
                 val presentFiles = readM3U8WithRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.35f, "[\"All.m3u8\"] Syncing with database…")
+                analysisProgress = Pair(0.15f, "[\"All.m3u8\"] Syncing with database…")
                 musicFileRepository.ensurePresentFiles(presentFiles)
             }
 
-            analysisProgress = Pair(0.4f, "[\"Songs - Choral.m3u8\"] Reading…")
+            analysisProgress = Pair(0.2f, "[\"Songs - Choral.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - Choral.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.45f, "[\"Songs - Choral.m3u8\"] Syncing with database…")
+                analysisProgress = Pair(0.25f, "[\"Songs - Choral.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangCh(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.5f, "[\"Songs - CHN.m3u8\"] Reading…")
+            analysisProgress = Pair(0.3f, "[\"Songs - CHN.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - CHN.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.55f, "[\"Songs - CHN.m3u8\"] Syncing with database…")
+                analysisProgress = Pair(0.35f, "[\"Songs - CHN.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangCN(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.6f, "[\"Songs - ENG.m3u8\"] Reading…")
+            analysisProgress = Pair(0.4f, "[\"Songs - ENG.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - ENG.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.65f, "[\"Songs - ENG.m3u8\"] Syncing with database…")
+                analysisProgress = Pair(0.45f, "[\"Songs - ENG.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangEN(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.7f, "[\"Songs - JAP.m3u8\"] Reading…")
+            analysisProgress = Pair(0.5f, "[\"Songs - JAP.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - JAP.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.75f, "[\"Songs - JAP.m3u8\"] Syncing with database…")
+                analysisProgress = Pair(0.55f, "[\"Songs - JAP.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangJP(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.8f, "[\"Songs - KOR.m3u8\"] Reading…")
+            analysisProgress = Pair(0.6f, "[\"Songs - KOR.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - KOR.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.85f, "[\"Songs - KOR.m3u8\"] Syncing with database…")
+                analysisProgress = Pair(0.65f, "[\"Songs - KOR.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangKR(it.first, it.second) }
             }
 
-            analysisProgress = Pair(0.9f, "[\"Songs - Others.m3u8\"] Reading…")
+            analysisProgress = Pair(0.7f, "[\"Songs - Others.m3u8\"] Reading…")
             m3u8DirDF.findFile("Songs - Others.m3u8")?.let { df ->
                 val langFiles = readM3U8WithoutRating(df, musicFolderNameToEncodedUri)
-                analysisProgress = Pair(0.95f, "[\"Songs - Others.m3u8\"] Syncing with database…")
+                analysisProgress = Pair(0.75f, "[\"Songs - Others.m3u8\"] Syncing with database…")
                 langFiles.forEach { musicFileRepository.setLangO(it.first, it.second) }
             }
+
+            analysisProgress = Pair(0.8f, "Generating \"(Auto) Songs.m3u8\"…")
+            delay(500L)
+            analysisProgress = Pair(0.825f, "Generating \"(Auto) 0S.m3u8\"…")
+            delay(500L)
+            analysisProgress = Pair(0.85f, "Generating \"(Auto) 1S.m3u8\"…")
+            delay(500L)
+            analysisProgress = Pair(0.875f, "Generating \"(Auto) 2S.m3u8\"…")
+            delay(500L)
+            analysisProgress = Pair(0.9f, "Generating \"(Auto) 3S.m3u8\"…")
+            delay(500L)
+            analysisProgress = Pair(0.925f, "Generating \"(Auto) 4S.m3u8\"…")
+            delay(500L)
+            analysisProgress = Pair(0.95f, "Generating \"(Auto) 5S.m3u8\"…")
+            delay(500L)
 
             analysisProgress = Pair(1f, "Finishing up…")
             keyStringValuePairRepository.put(

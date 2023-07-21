@@ -23,15 +23,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.kaeonx.poweramphelper.ui.PHDestination
-import com.kaeonx.poweramphelper.ui.bottomNavBarItems
+import androidx.navigation.navArgument
+import com.kaeonx.poweramphelper.ui.PHDestinationHidden
+import com.kaeonx.poweramphelper.ui.PHDestinationWithIcon
 import com.kaeonx.poweramphelper.ui.screens.home.HomeScreen
 import com.kaeonx.poweramphelper.ui.screens.language.LanguageScreen
 import com.kaeonx.poweramphelper.ui.screens.rating.RatingScreen
+import com.kaeonx.poweramphelper.ui.screens.ratingFolder.RatingFolderScreen
 
 //// To pass the snackbarHostState into the hierarchy without manual "prop drilling"
 //internal val LocalSnackbarHostState = compositionLocalOf<SnackbarHostState> {
@@ -56,7 +59,7 @@ internal fun PowerampHelperApp() {
         topBar = {
             // Top App Bar hiding strategy courtesy of https://stackoverflow.com/a/71011124
             AnimatedVisibility(
-                visible = currentDestination?.route == PHDestination.Home.route,
+                visible = currentDestination?.route == PHDestinationWithIcon.Home.route,
                 enter = slideInVertically() + expandVertically() + fadeIn(),
                 exit = slideOutVertically() + shrinkVertically() + fadeOut()
             ) {
@@ -73,7 +76,7 @@ internal fun PowerampHelperApp() {
         },
         bottomBar = {
             NavigationBar {
-                bottomNavBarItems.forEach { phDestination ->
+                PHDestinationWithIcon.items.forEach { phDestination ->
                     NavigationBarItem(
                         icon = {
                             Icon(
@@ -82,7 +85,11 @@ internal fun PowerampHelperApp() {
                             )
                         },
                         label = { Text(text = phDestination.bottomBarDisplayName) },
-                        selected = currentDestination?.hierarchy?.any { it.route == phDestination.route } == true,
+                        selected = currentDestination?.hierarchy?.any { hierarchyDestination ->
+                            // A bit messy but this will do
+                            phDestination.route == hierarchyDestination.route ||
+                                    phDestination.route == PHDestinationHidden.items.find { it.route == hierarchyDestination.route }?.bottomBarRoute
+                        } == true,
                         onClick = {
                             navController.navigate(phDestination.route) {
                                 // Pop up to the start destination of the graph to avoid building up
@@ -105,11 +112,24 @@ internal fun PowerampHelperApp() {
         NavHost(
             modifier = Modifier.padding(innerPadding),
             navController = navController,
-            startDestination = PHDestination.Home.route
+            startDestination = PHDestinationWithIcon.Home.route
         ) {
-            composable(route = PHDestination.Home.route) { HomeScreen() }
-            composable(route = PHDestination.Language.route) { LanguageScreen() }
-            composable(route = PHDestination.Rating.route) { RatingScreen() }
+            composable(route = PHDestinationWithIcon.Home.route) { HomeScreen() }
+            composable(route = PHDestinationWithIcon.Language.route) { LanguageScreen() }
+            composable(route = PHDestinationWithIcon.Rating.route) { RatingScreen(navController) }
+            composable(
+                route = PHDestinationHidden.RatingFolder.route,
+                arguments = listOf(navArgument("folderEncodedUri") {
+                    type = NavType.StringType
+                })
+            ) { navBackStackEntry ->
+                RatingFolderScreen(
+                    encodedFolderUri = navBackStackEntry.arguments?.getString("folderEncodedUri")
+                        ?: throw IllegalStateException(
+                            "Attempted to launch RatingFolderScreen without navArgument folderEncodedUri"
+                        )
+                )
+            }
         }
     }
 //    }

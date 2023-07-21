@@ -7,7 +7,7 @@ import com.kaeonx.poweramphelper.database.MusicFolderWithLangStatsUI
 // used in Android documentations without explanation for UIState objects
 @Immutable
 internal data class LanguageScreenState(
-    internal val musicFoldersWithStatistics: List<MusicFolderWithLangStatsUI>,
+    internal val musicFoldersWithLangStats: List<MusicFolderWithLangStatsUI>,
     internal val sortOption: LanguageScreenSortOption,
     internal val pendingFirstSort: Boolean,
     internal val descendingSort: Boolean,

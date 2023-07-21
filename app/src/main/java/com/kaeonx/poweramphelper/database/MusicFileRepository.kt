@@ -4,8 +4,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 internal class MusicFileRepository(private val musicFileDAO: MusicFileDAO) {
-    internal fun getMusicFilesInMusicFolderFlow(parentDirEncodedUri: String): Flow<List<MusicFile>> {
-        return musicFileDAO.getMusicFilesInMusicFolderFlow(parentDirEncodedUri).distinctUntilChanged()
+    internal fun getMusicFilesInMusicFolderLangMinusFlow(parentDirEncodedUri: String): Flow<List<MusicFile>> {
+        return musicFileDAO.getMusicFilesInMusicFolderLangMinusFlow(parentDirEncodedUri).distinctUntilChanged()
+    }
+
+    internal fun getMusicFilesInMusicFolderRating0SFlow(parentDirEncodedUri: String): Flow<List<MusicFile>> {
+        return musicFileDAO.getMusicFilesInMusicFolderRating0SFlow(parentDirEncodedUri).distinctUntilChanged()
     }
 
     internal suspend fun setLangCh(parentDirEncodedUri: String, fileName: String) {

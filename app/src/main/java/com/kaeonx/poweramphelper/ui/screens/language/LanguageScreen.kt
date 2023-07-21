@@ -78,7 +78,7 @@ internal fun LanguageScreen(languageScreenViewModel: LanguageScreenViewModel = v
         }
         LazyColumn(modifier = Modifier.fillMaxWidth(), state = listState) {
             items(
-                items = languageScreenState.musicFoldersWithStatistics,
+                items = languageScreenState.musicFoldersWithLangStats,
                 key = { it.encodedUri }
             ) {
                 ListItem(

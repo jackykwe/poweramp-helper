@@ -8,8 +8,15 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 internal interface MusicFileDAO {
-    @Query("SELECT * FROM musicfile WHERE `parentDirEncodedUri` = :parentDirEncodedUri ORDER BY `fileName`;")
-    fun getMusicFilesInMusicFolderFlow(parentDirEncodedUri: String): Flow<List<MusicFile>>
+    @Query(
+        "SELECT * FROM musicfile WHERE `parentDirEncodedUri` = :parentDirEncodedUri AND " +
+        "                              `langCH` = 0 AND `langCh` = 0 AND `langEN` = 0 AND " +
+        "                              `langJP` = 0 AND `langKR` = 0 AND `langO` = 0 " +
+        "ORDER BY `fileName`;")
+    fun getMusicFilesInMusicFolderLangMinusFlow(parentDirEncodedUri: String): Flow<List<MusicFile>>
+
+    @Query("SELECT * FROM musicfile WHERE `parentDirEncodedUri` = :parentDirEncodedUri AND `rating` = 0 ORDER BY `fileName`;")
+    fun getMusicFilesInMusicFolderRating0SFlow(parentDirEncodedUri: String): Flow<List<MusicFile>>
 
     @Query("UPDATE musicfile SET `langCh` = 1 WHERE `parentDirEncodedUri` = :parentDirEncodedUri AND `fileName` = :fileName;")
     suspend fun setLangCh(parentDirEncodedUri: String, fileName: String)

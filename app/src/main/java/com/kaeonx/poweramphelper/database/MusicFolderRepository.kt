@@ -14,6 +14,10 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  * <https://developer.android.com/training/data-storage/room/async-queries#observable>
  */
 internal class MusicFolderRepository(private val musicFolderDAO: MusicFolderDAO) {
+    internal suspend fun getDirNameFromEncodedUri(encodedUri: String): String {
+        return musicFolderDAO.getDirNameFromEncodedUri(encodedUri)
+    }
+
     internal fun getAllFlow(): Flow<List<MusicFolder>> {
         return musicFolderDAO.getAllFlow().distinctUntilChanged()
     }

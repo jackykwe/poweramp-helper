@@ -1,6 +1,7 @@
 package com.kaeonx.poweramphelper.ui.screens.rating
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -35,11 +36,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import com.kaeonx.poweramphelper.ui.PHDestinationHidden
+import com.kaeonx.poweramphelper.utils.mapToIntListString
 
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-internal fun RatingScreen(ratingScreenViewModel: RatingScreenViewModel = viewModel()) {
+internal fun RatingScreen(
+    navController: NavController,
+    ratingScreenViewModel: RatingScreenViewModel = viewModel()
+) {
     val ratingScreenState by ratingScreenViewModel.ratingScreenState.collectAsStateWithLifecycle()
 
     // Dialog and Radio stuffs
@@ -72,12 +79,20 @@ internal fun RatingScreen(ratingScreenViewModel: RatingScreenViewModel = viewMod
         }
         LazyColumn(modifier = Modifier.fillMaxWidth(), state = listState) {
             items(
-                items = ratingScreenState.musicFoldersWithStatistics,
+                items = ratingScreenState.musicFoldersWithRatingStats,
                 key = { it.encodedUri }
             ) {
                 ListItem(
                     headlineContent = { Text(text = it.dirName) },
-                    modifier = Modifier.animateItemPlacement(),
+                    modifier = Modifier
+                        .animateItemPlacement()
+                        .clickable {
+                            navController.navigate(
+                                PHDestinationHidden.RatingFolder.resolveRoute(
+                                    mapToIntListString(it.encodedUri)
+                                )
+                            )
+                        },
                     supportingContent = {
                         Column {
                             Text(

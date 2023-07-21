@@ -28,3 +28,14 @@ internal data class MusicFile(
     internal val langCh: Boolean = false    // Choral
 )
 
+internal data class MusicFileUI(
+    internal val parentDirEncodedUri: String,
+    internal val fileName: String,
+//    internal val rating: Int,
+//    internal val langEN: Boolean = false,    // ENG
+//    internal val langCN: Boolean = false,    // CHN
+//    internal val langJP: Boolean = false,    // JAP
+//    internal val langKR: Boolean = false,    // KOR
+//    internal val langO: Boolean = false,     // Others
+//    internal val langCh: Boolean = false    // Choral
+)

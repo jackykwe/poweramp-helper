@@ -7,7 +7,7 @@ import com.kaeonx.poweramphelper.database.MusicFolderWithRatingStatsUI
 // used in Android documentations without explanation for UIState objects
 @Immutable
 internal data class RatingScreenState(
-    internal val musicFoldersWithStatistics: List<MusicFolderWithRatingStatsUI>,
+    internal val musicFoldersWithRatingStats: List<MusicFolderWithRatingStatsUI>,
     internal val sortOption: RatingScreenSortOption,
     internal val descendingSort: Boolean,
     internal val sortString: String

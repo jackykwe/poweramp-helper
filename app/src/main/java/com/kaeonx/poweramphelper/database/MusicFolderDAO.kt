@@ -8,6 +8,9 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 internal interface MusicFolderDAO {
+    @Query("SELECT `dirName` FROM musicfolder WHERE `encodedUri` = :encodedUri;")
+    suspend fun getDirNameFromEncodedUri(encodedUri: String): String
+
     @Query("SELECT * FROM musicfolder;")
     fun getAllFlow(): Flow<List<MusicFolder>>
 

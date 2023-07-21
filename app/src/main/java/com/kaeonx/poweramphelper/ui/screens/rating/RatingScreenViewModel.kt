@@ -61,7 +61,7 @@ internal class RatingScreenViewModel(application: Application) : AndroidViewMode
         }
         musicFoldersWithStatisticsFlow.map { musicFoldersWithStatistics ->
             RatingScreenState(
-                musicFoldersWithStatistics = musicFoldersWithStatistics.map {
+                musicFoldersWithRatingStats = musicFoldersWithStatistics.map {
                     val ratingGt0SSum =
                         it.rating1SSum + it.rating2SSum + it.rating3SSum + it.rating4SSum + it.rating5SSum
                     MusicFolderWithRatingStatsUI(
@@ -80,7 +80,7 @@ internal class RatingScreenViewModel(application: Application) : AndroidViewMode
         viewModelScope,
         SharingStarted.Lazily,
         RatingScreenState(
-            musicFoldersWithStatistics = listOf(),
+            musicFoldersWithRatingStats = listOf(),
             sortOption = RatingScreenSortOption.NAME,
             descendingSort = false,
             sortString = ""

@@ -66,7 +66,7 @@ internal class LanguageScreenViewModel(application: Application) : AndroidViewMo
         }
         musicFoldersWithLangStatsFlow.map { musicFoldersWithLangStats ->
             LanguageScreenState(
-                musicFoldersWithStatistics = musicFoldersWithLangStats.map {
+                musicFoldersWithLangStats = musicFoldersWithLangStats.map {
                     val state = when {
                         it.doneMillis == null -> MusicFolderState.NOT_DONE
                         it.resetMillis == null -> MusicFolderState.DONE
@@ -94,7 +94,7 @@ internal class LanguageScreenViewModel(application: Application) : AndroidViewMo
         viewModelScope,
         SharingStarted.Lazily,
         LanguageScreenState(
-            musicFoldersWithStatistics = listOf(),
+            musicFoldersWithLangStats = listOf(),
             sortOption = LanguageScreenSortOption.NAME,
             pendingFirstSort = false,
             descendingSort = false,

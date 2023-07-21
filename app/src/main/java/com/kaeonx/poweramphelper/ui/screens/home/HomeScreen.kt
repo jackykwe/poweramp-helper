@@ -160,7 +160,7 @@ internal fun HomeScreen(homeScreenViewModel: HomeScreenViewModel = viewModel()) 
                                 onClick = { homeScreenViewModel.analyseAllPlaylist() },
                                 modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(text = "Analyse")
+                                Text(text = "Analyse & Generate Auto Playlists")
                             }
                         }
                     }
