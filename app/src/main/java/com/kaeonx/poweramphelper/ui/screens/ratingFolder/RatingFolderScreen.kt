@@ -32,7 +32,6 @@ import com.kaeonx.poweramphelper.utils.resolveUri
 
 @Composable
 internal fun RatingFolderScreen(
-    encodedFolderUri: String,
     ratingFolderScreenViewModel: RatingFolderScreenViewModel = viewModel()
 ) {
     val context = LocalContext.current

@@ -132,27 +132,13 @@ internal fun PowerampHelperApp() {
                     arguments = listOf(navArgument("folderEncodedUri") {
                         type = NavType.StringType
                     })
-                ) { navBackStackEntry ->
-                    LanguageFolderScreen(
-                        encodedFolderUri = navBackStackEntry.arguments?.getString("folderEncodedUri")
-                            ?: throw IllegalStateException(
-                                "Attempted to launch LanguageFolderScreen without navArgument folderEncodedUri"
-                            )
-                    )
-                }
+                ) { LanguageFolderScreen() }
                 composable(
                     route = PHDestinationHidden.RatingFolder.route,
                     arguments = listOf(navArgument("folderEncodedUri") {
                         type = NavType.StringType
                     })
-                ) { navBackStackEntry ->
-                    RatingFolderScreen(
-                        encodedFolderUri = navBackStackEntry.arguments?.getString("folderEncodedUri")
-                            ?: throw IllegalStateException(
-                                "Attempted to launch RatingFolderScreen without navArgument folderEncodedUri"
-                            )
-                    )
-                }
+                ) { RatingFolderScreen() }
             }
         }
     }

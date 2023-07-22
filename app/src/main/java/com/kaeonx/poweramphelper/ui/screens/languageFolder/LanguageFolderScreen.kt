@@ -32,7 +32,6 @@ import com.kaeonx.poweramphelper.utils.resolveUri
 
 @Composable
 internal fun LanguageFolderScreen(
-    encodedFolderUri: String,
     languageFolderScreenViewModel: LanguageFolderScreenViewModel = viewModel()
 ) {
     val context = LocalContext.current
