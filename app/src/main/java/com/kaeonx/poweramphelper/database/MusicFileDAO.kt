@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 internal interface MusicFileDAO {
     @Query(
         "SELECT * FROM musicfile WHERE `parentDirEncodedUri` = :parentDirEncodedUri AND " +
-        "                              `langCH` = 0 AND `langCh` = 0 AND `langEN` = 0 AND " +
+        "                              `langCh` = 0 AND `langCN` = 0 AND `langEN` = 0 AND " +
         "                              `langJP` = 0 AND `langKR` = 0 AND `langO` = 0 " +
         "ORDER BY `fileName`;")
     fun getMusicFilesInMusicFolderLangMinusFlow(parentDirEncodedUri: String): Flow<List<MusicFile>>
