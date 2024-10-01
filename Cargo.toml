@@ -1,0 +1,10 @@
+[package]
+description = "A CLI tool to generate automatic m3u8 playlists for aggregated songs and the five star ratings, and to generate a report of characteristics for each folder."
+name = "poweramp-helper"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.89"
+clap = { version = "4.5.18", features = ["derive"] }
+polars = { version = "0.43.1", features = ["lazy"] }
