@@ -7,4 +7,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.89"
 clap = { version = "4.5.19", features = ["derive"] }
-polars = { version = "0.43.1", features = ["is_in", "lazy", "list_to_struct", "strings"] }
+comfy-table = "7.1.1"
+dialoguer = { version = "0.11.0", default-features = false }
+polars = { version = "0.43.1", features = ["concat_str", "is_in", "lazy", "list_to_struct", "strings"] }
