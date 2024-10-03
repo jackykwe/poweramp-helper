@@ -8,6 +8,7 @@ use std::{
 use clap::Parser;
 use polars::{
     df,
+    io::SerWriter,
     prelude::{all, col, concat_str, lit, DataType, Expr, IntoLazy, LazyFrame},
     series::Series,
 };
@@ -239,7 +240,7 @@ fn main() -> anyhow::Result<()> {
         }
     }
 
-    let statistics_table = df
+    let mut statistics_table = df
         .clone()
         .group_by(["parent_dir"])
         .agg([
@@ -249,8 +250,8 @@ fn main() -> anyhow::Result<()> {
             col("rating").eq(lit(3)).sum().alias("3S"),
             col("rating").eq(lit(4)).sum().alias("4S"),
             col("rating").eq(lit(5)).sum().alias("5S"),
-            col("CN").sum(),
             col("EN").sum(),
+            col("CN").sum(),
             col("JP").sum(),
             col("KR").sum(),
             col("O").sum(),
@@ -259,9 +260,56 @@ fn main() -> anyhow::Result<()> {
         // no need to .select([all().exclude([...])]) because agg() implicitly only
         // selects the provided columns above
         .sort(["parent_dir"], Default::default())
+        .rename(["parent_dir"], ["Directory"])
         .collect()?;
+    polars::prelude::CsvWriter::new(File::create("statistics_table.csv")?)
+        .include_header(true)
+        .with_separator(b',')
+        .with_quote_char(b'"')
+        .with_quote_style(polars::prelude::QuoteStyle::Always)
+        .finish(&mut statistics_table)?;
 
-    println!("{}", statistics_table);
+    let mut pretty_table = comfy_table::Table::new();
+    pretty_table
+        .load_preset(comfy_table::presets::UTF8_FULL)
+        .apply_modifier(comfy_table::modifiers::UTF8_ROUND_CORNERS)
+        .set_content_arrangement(comfy_table::ContentArrangement::DynamicFullWidth)
+        .set_header([
+            comfy_table::Cell::new("Directory").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("0S").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("1S").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("2S").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("3S").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("4S").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("5S").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("EN").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("CN").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("JP").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("KR").add_attribute(comfy_table::Attribute::Bold),
+            comfy_table::Cell::new("O").add_attribute(comfy_table::Attribute::Bold),
+        ]);
+    for row in csv::Reader::from_reader(BufReader::new(File::open("statistics_table.csv")?))
+        .records()
+        .flatten()
+    {
+        // "Directory","0S","1S","2S","3S","4S","5S","EN","CN","JP","KR","O","Total"
+        pretty_table.add_row([
+            row.get(0).unwrap(),
+            row.get(1).unwrap(),
+            row.get(2).unwrap(),
+            row.get(3).unwrap(),
+            row.get(4).unwrap(),
+            row.get(5).unwrap(),
+            row.get(6).unwrap(),
+            row.get(7).unwrap(),
+            row.get(8).unwrap(),
+            row.get(9).unwrap(),
+            row.get(10).unwrap(),
+            row.get(11).unwrap(),
+            row.get(12).unwrap(),
+        ]);
+    }
+    println!("{}", pretty_table);
 
     Ok(())
 }
