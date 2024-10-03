@@ -1,13 +1,14 @@
 use std::{
     fs::File,
     io::{BufRead, BufReader, BufWriter, Write},
+    iter::Peekable,
     path::{Path, PathBuf},
 };
 
 use clap::Parser;
 use polars::{
     df,
-    prelude::{all, col, concat_str, lit, DataType, IntoLazy, LazyFrame},
+    prelude::{all, col, concat_str, lit, DataType, Expr, IntoLazy, LazyFrame},
     series::Series,
 };
 
@@ -23,6 +24,11 @@ struct Args {
     /// exist, without prompting.
     #[arg(short = 'y')]
     force: bool,
+
+    /// Do not write `[Auto] <...>.m3u8` playlists into `m3u8_dir`, only display
+    /// analysis table.
+    #[arg(long)]
+    analysis_only: bool,
 }
 
 static M3U8_NAMES: [&str; 6] = [
@@ -34,64 +40,9 @@ static M3U8_NAMES: [&str; 6] = [
     "Songs - O",
 ];
 
-fn add_language_membership_column(
-    df: LazyFrame,
-    m3u8_language_path: PathBuf,
-    new_column_name: &str,
-) -> anyhow::Result<LazyFrame> {
-    #[allow(clippy::result_filter_map)]
-    let mut m3u8_language_lines = BufReader::new(File::open(&m3u8_language_path)?)
-        .lines()
-        // .flatten()
-        .filter(Result::is_ok)
-        .map(Result::unwrap) // would have used .flatten() but that has the danger of `flatten()` will run forever if the iterator repeatedly produces an `Err`
-        .skip(1) // skip header line,
-        .peekable();
-
-    let mut language_line_file_names = Vec::new();
-    while m3u8_language_lines.peek().is_some() {
-        m3u8_language_lines.next(); // rating line, ignore
-        let line_music_file = m3u8_language_lines
-            .next()
-            .ok_or_else(|| anyhow::anyhow!(
-                "{} is malformed: a rating line is not followed by a line describing the corresponding music file.",
-                m3u8_language_path.to_string_lossy()
-            ))?;
-        language_line_file_names.push(line_music_file)
-    }
-    Ok(df.with_column(
-        col("line_file_name")
-            .is_in(lit(Series::from_iter(language_line_file_names)))
-            .alias(new_column_name),
-    ))
-}
-
-fn prompt_overwrite_file(file_path: &Path) -> anyhow::Result<bool> {
-    match dialoguer::Input::<char>::new()
-        .with_prompt(format!(
-            "`{}` exists. Overwrite [y/N]?",
-            file_path.to_string_lossy()
-        ))
-        .allow_empty(true)
-        .default('N')
-        .show_default(false)
-        .validate_with(|input: &char| match input {
-            'y' | 'Y' | 'n' | 'N' => Ok(()),
-            _ => Err("Type either `y` or `n`"),
-        })
-        .interact_text()?
-    {
-        'y' | 'Y' => Ok(true),
-        'n' | 'N' => Ok(false),
-        _ => panic!(), // impossible due to validation above
-    }
-}
-
-fn main() -> anyhow::Result<()> {
-    let args: Args = Args::parse();
-
+fn check_required_m3u8s_exist(m3u8_dir: &Path) -> anyhow::Result<()> {
     for m3u8_name in M3U8_NAMES {
-        let m3u8_path = args.m3u8_dir.join(format!("{}.m3u8", m3u8_name));
+        let m3u8_path = m3u8_dir.join(format!("{}.m3u8", m3u8_name));
         if !m3u8_path.exists() {
             anyhow::bail!(
                 "`{}` does not exist, exiting...",
@@ -99,17 +50,53 @@ fn main() -> anyhow::Result<()> {
             );
         }
     }
+    Ok(())
+}
 
-    let m3u8_all_path: PathBuf = args.m3u8_dir.join(format!("{}.m3u8", M3U8_NAMES[0]));
-    #[allow(clippy::result_filter_map)]
-    let mut m3u8_all_lines = BufReader::new(File::open(&m3u8_all_path)?)
-        .lines()
-        // .flatten()
-        .filter(Result::is_ok)
-        .map(Result::unwrap) // would have used .flatten() but that has the danger of `flatten()` will run forever if the iterator repeatedly produces an `Err`
-        .skip(1) // skip header line,
-        .peekable();
+fn read_and_parse_m3u8_all(m3u8_dir: &Path) -> anyhow::Result<LazyFrame> {
+    /// File reader utility.
+    fn read_m3u8_file_as_lines(
+        file_path: &Path,
+        head_lines_to_drop: usize,
+    ) -> anyhow::Result<Peekable<impl Iterator<Item = String>>> {
+        #[allow(clippy::result_filter_map)]
+        Ok(BufReader::new(File::open(file_path)?)
+            .lines()
+            // .flatten()
+            .filter(Result::is_ok)
+            .map(Result::unwrap) // would have used .flatten() but that has the danger of `flatten()` will run forever if the iterator repeatedly produces an `Err`
+            .skip(head_lines_to_drop)
+            .peekable())
+    }
 
+    fn read_and_add_language_membership_column(
+        df: LazyFrame,
+        m3u8_language_path: PathBuf,
+        new_column_name: &str,
+    ) -> anyhow::Result<LazyFrame> {
+        #[allow(clippy::result_filter_map)]
+        let mut m3u8_language_lines = read_m3u8_file_as_lines(&m3u8_language_path, 1)?;
+
+        let mut language_line_file_names = Vec::new();
+        while m3u8_language_lines.peek().is_some() {
+            m3u8_language_lines.next(); // rating line, ignore
+            let line_music_file = m3u8_language_lines
+                .next()
+                .ok_or_else(|| anyhow::anyhow!(
+                    "{} is malformed: a rating line is not followed by a line describing the corresponding music file.",
+                    m3u8_language_path.to_string_lossy()
+                ))?;
+            language_line_file_names.push(line_music_file)
+        }
+        Ok(df.with_column(
+            col("line_file_name")
+                .is_in(lit(Series::from_iter(language_line_file_names)))
+                .alias(new_column_name),
+        ))
+    }
+
+    let m3u8_all_path: PathBuf = m3u8_dir.join(format!("{}.m3u8", M3U8_NAMES[0]));
+    let mut m3u8_all_lines = read_m3u8_file_as_lines(&m3u8_all_path, 1)?;
     let mut line_ratings = Vec::new();
     let mut line_music_files = Vec::new();
     while m3u8_all_lines.peek().is_some() {
@@ -149,30 +136,56 @@ fn main() -> anyhow::Result<()> {
     ]);
 
     for m3u8_name in &M3U8_NAMES[1..] {
-        df = add_language_membership_column(
+        df = read_and_add_language_membership_column(
             df,
-            args.m3u8_dir.join(format!("{}.m3u8", m3u8_name)),
+            m3u8_dir.join(format!("{}.m3u8", m3u8_name)),
             m3u8_name.split(" - ").last().unwrap(),
         )?;
     }
-    let df = df; // remove mutability
+    Ok(df)
+}
 
-    let m3u8_songs_path = args.m3u8_dir.join("[Auto] Songs.m3u8");
-    let mut write_m3u8_songs = true;
-    if m3u8_songs_path.exists() && !args.force && !prompt_overwrite_file(&m3u8_songs_path)? {
-        write_m3u8_songs = false;
+/// `df` is a table of all the music files, one row per music file. It must minimally
+/// contain the `line_rating` and `line_file_name` columns. Use `df_filter` to select
+/// the music files to write to a new playlist at `destination_path`. `force`, if true,
+/// allows the write to overwrite an existing playlist at `destination_path` (if false,
+/// user confirmation is requested).
+fn generate_and_write_auto_m3u8_playlist(
+    df: LazyFrame,
+    df_filter: Expr, // rows to write to `destination_path`
+    destination_path: &Path,
+    force: bool,
+) -> anyhow::Result<()> {
+    /// Prompts the user whether to proceed with overwriting an existing file at `file_path`.
+    fn prompt_overwrite_file(file_path: &Path) -> anyhow::Result<bool> {
+        match dialoguer::Input::<char>::new()
+            .with_prompt(format!(
+                "`{}` exists. Overwrite [y/N]?",
+                file_path.to_string_lossy()
+            ))
+            .allow_empty(true)
+            .default('N')
+            .show_default(false)
+            .validate_with(|input: &char| match input {
+                'y' | 'Y' | 'n' | 'N' => Ok(()),
+                _ => Err("Type either `y` or `n`"),
+            })
+            .interact_text()?
+        {
+            'y' | 'Y' => Ok(true),
+            'n' | 'N' => Ok(false),
+            _ => panic!(), // impossible due to validation above
+        }
     }
-    if write_m3u8_songs {
-        let mut m3u8_songs_content = String::from("#EXTM3U\n");
-        let m3u8_songs_content_tail = df
-            .clone()
-            .filter(
-                col("CN")
-                    .or(col("EN"))
-                    .or(col("JP"))
-                    .or(col("KR"))
-                    .or(col("O")),
-            )
+
+    let mut proceed_with_writing = true;
+    if destination_path.exists() && !force && !prompt_overwrite_file(destination_path)? {
+        proceed_with_writing = false;
+    }
+    if proceed_with_writing {
+        let mut m3u8_content = String::from("#EXTM3U\n");
+        let m3u8_content_tail = df
+            .filter(df_filter)
             .sort(["line_file_name"], Default::default())
             .select([
                 concat_str([col("line_rating"), col("line_file_name")], "\n", false) // merge two columns
@@ -182,48 +195,47 @@ fn main() -> anyhow::Result<()> {
                     .alias("t"),
             ])
             .collect()?;
-        let m3u8_songs_content_tail = m3u8_songs_content_tail
+        let m3u8_content_tail = m3u8_content_tail
             .select_at_idx(0) // select first and only column (as Series)
             .unwrap() // existence of first column guaranteed by select() above
             .str()? // unwrap type to underlying ChunkedArray<StringType>
             .get(0);
-        if let Some(m3u8_songs_content_tail) = m3u8_songs_content_tail {
-            m3u8_songs_content.push_str(m3u8_songs_content_tail);
+        if let Some(m3u8_songs_content_tail) = m3u8_content_tail {
+            m3u8_content.push_str(m3u8_songs_content_tail);
         }
-        let mut m3u8_songs = BufWriter::new(File::create(m3u8_songs_path)?);
-        m3u8_songs.write_all(m3u8_songs_content.as_bytes())?;
+        let mut f: BufWriter<File> = BufWriter::new(File::create(destination_path)?);
+        f.write_all(m3u8_content.as_bytes())?;
     }
+    Ok(())
+}
 
-    for stars in 1..=5 {
-        let m3u8_stars_path = args.m3u8_dir.join(format!("[Auto] {}S.m3u8", stars));
-        let mut write_m3u8_stars: bool = true;
-        if m3u8_stars_path.exists() && !args.force && !prompt_overwrite_file(&m3u8_stars_path)? {
-            write_m3u8_stars = false;
-        }
-        if write_m3u8_stars {
-            let mut m3u8_stars_content = String::from("#EXTM3U\n");
-            let m3u8_stars_content_tail = df
-                .clone()
-                .filter(col("rating").eq(lit(stars)))
-                .sort(["line_file_name"], Default::default())
-                .select([
-                    concat_str([col("line_rating"), col("line_file_name")], "\n", false) // merge two columns
-                        .str()
-                        .join("\n", false) // merge all rows
-                        .get(lit(0))
-                        .alias("t"),
-                ])
-                .collect()?;
-            let m3u8_stars_content_tail = m3u8_stars_content_tail
-                .select_at_idx(0) // select first and only column (as Series)
-                .unwrap() // existence of first column guaranteed by select() above
-                .str()? // unwrap type to underlying ChunkedArray<StringType>
-                .get(0);
-            if let Some(m3u8_stars_content_tail) = m3u8_stars_content_tail {
-                m3u8_stars_content.push_str(m3u8_stars_content_tail);
-            }
-            let mut m3u8_stars = BufWriter::new(File::create(m3u8_stars_path)?);
-            m3u8_stars.write_all(m3u8_stars_content.as_bytes())?;
+fn main() -> anyhow::Result<()> {
+    let args: Args = Args::parse();
+    check_required_m3u8s_exist(&args.m3u8_dir)?;
+
+    // "Single source of truth"
+    let df = read_and_parse_m3u8_all(&args.m3u8_dir)?;
+
+    // Write `[Auto] <...>.m3u8` playlists
+    if !args.analysis_only {
+        generate_and_write_auto_m3u8_playlist(
+            df.clone(),
+            col("CN")
+                .or(col("EN"))
+                .or(col("JP"))
+                .or(col("KR"))
+                .or(col("O")),
+            &args.m3u8_dir.join("[Auto] Songs.m3u8"),
+            args.force,
+        )?;
+
+        for stars in 1..=5 {
+            generate_and_write_auto_m3u8_playlist(
+                df.clone(),
+                col("rating").eq(lit(stars)),
+                &args.m3u8_dir.join(format!("[Auto] {}S.m3u8", stars)),
+                args.force,
+            )?;
         }
     }
 
