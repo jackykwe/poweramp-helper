@@ -1,7 +1,7 @@
 [package]
 description = "A CLI tool to generate automatic m3u8 playlists for aggregated songs and the five star ratings, and to generate a report of characteristics for each folder."
 name = "poweramp-helper"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2021"
 
 [dependencies]
@@ -10,4 +10,12 @@ clap = { version = "4.5.19", features = ["derive"] }
 comfy-table = "7.1.1"
 csv = "1.3.0"
 dialoguer = { version = "0.11.0", default-features = false }
-polars = { version = "0.43.1", features = ["concat_str", "is_in", "lazy", "list_to_struct", "strings"] }
+polars = { version = "0.43.1", default-features = false, features = [
+    "concat_str",
+    "dtype-slim",
+    "dtype-u8",
+    "is_in",
+    "lazy",
+    "polars-io",
+    "strings",
+] }
